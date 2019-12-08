@@ -118,3 +118,23 @@ impl VM {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_initial_memory_empty() {
+        let memory = Memory::new();
+        assert!(memory.memory.iter().all(|&byte| byte == 0));
+    }
+
+    #[test]
+    fn test_initial_memory_with_initial_sprites() {
+        let memory = Memory::new_with_initial_sprites();
+        for (i, &byte) in memory.memory[0..80].iter().enumerate() {
+            assert_eq!(byte, INITIAL_SPRITES[i]);
+        }
+        assert!(memory.memory[80..].iter().all(|&byte| byte == 0));
+    }
+}
