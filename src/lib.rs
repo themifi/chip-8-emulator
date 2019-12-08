@@ -150,6 +150,12 @@ impl VM {
     fn ret(&mut self) {
         self.registers.program_counter = self.stack.pop();
     }
+
+    fn call(&mut self, addr: u16) {
+        assert!((addr & 0xF000) == 0);
+        self.stack.push(self.registers.program_counter);
+        self.registers.program_counter = addr;
+    }
 }
 
 #[cfg(test)]
@@ -227,5 +233,35 @@ mod tests {
         assert_eq!(vm.registers.program_counter, 3);
         assert_eq!(vm.stack.pointer, 1);
         assert_eq!(vm.stack.stack[0], 2);
+    }
+
+    #[test]
+    fn test_call() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 1;
+        vm.stack.push(2);
+        vm.stack.push(3);
+
+        vm.call(4);
+
+        assert_eq!(vm.registers.program_counter, 4);
+        assert_eq!(vm.stack.pointer, 3);
+        assert_eq!(vm.stack.stack[0], 2);
+        assert_eq!(vm.stack.stack[1], 3);
+        assert_eq!(vm.stack.stack[2], 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_call_invalid_addr() {
+        let mut vm = VM::new();
+        vm.call(0x1111);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_call_invalid_addr_edge_case() {
+        let mut vm = VM::new();
+        vm.call(0x1000);
     }
 }
