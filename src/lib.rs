@@ -117,6 +117,11 @@ impl VM {
             input: Input::new(),
         }
     }
+
+    fn jump(&mut self, addr: u16) {
+        assert!((addr & 0xF000) == 0);
+        self.registers.program_counter = addr;
+    }
 }
 
 #[cfg(test)]
@@ -136,5 +141,39 @@ mod tests {
             assert_eq!(byte, INITIAL_SPRITES[i]);
         }
         assert!(memory.memory[80..].iter().all(|&byte| byte == 0));
+    }
+
+    #[test]
+    fn test_jump_opcode() {
+        let mut vm = VM::new();
+        let addr = 16u16;
+
+        vm.jump(addr);
+
+        assert_eq!(vm.registers.program_counter, addr);
+    }
+
+    #[test]
+    fn test_jump_edge_case() {
+        let mut vm = VM::new();
+        let addr = 0x0FFF;
+
+        vm.jump(addr);
+
+        assert_eq!(vm.registers.program_counter, addr);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_jump_incorrect_addr() {
+        let mut vm = VM::new();
+        vm.jump(0xFFFFu16);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_jump_incorrect_addr_edge_case() {
+        let mut vm = VM::new();
+        vm.jump(0x1000);
     }
 }
