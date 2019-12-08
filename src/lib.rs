@@ -1,3 +1,5 @@
+use std::u64;
+
 const MEMORY_SIZE: usize = 4096;
 
 static INITIAL_SPRITES: [u8; 80] = [
@@ -59,15 +61,21 @@ impl Registers {
     }
 }
 
+const DISPLAY_ROWS: usize = 32;
+
 struct Graphics {
-    display: [u64; 32],
+    display: [u64; DISPLAY_ROWS],
 }
 
 impl Graphics {
     fn new() -> Self {
         Self {
-            display: [0; 32],
+            display: [0; DISPLAY_ROWS],
         }
+    }
+
+    fn clear(&mut self) {
+        self.display = [0; DISPLAY_ROWS];
     }
 }
 
@@ -122,6 +130,10 @@ impl VM {
         assert!((addr & 0xF000) == 0);
         self.registers.program_counter = addr;
     }
+
+    fn cls(&mut self) {
+        self.graphics.clear();
+    }
 }
 
 #[cfg(test)]
@@ -175,5 +187,15 @@ mod tests {
     fn test_jump_incorrect_addr_edge_case() {
         let mut vm = VM::new();
         vm.jump(0x1000);
+    }
+
+    #[test]
+    fn test_cls() {
+        let mut vm = VM::new();
+        vm.graphics.display = [u64::MAX; DISPLAY_ROWS];
+
+        vm.cls();
+
+        assert!(vm.graphics.display.iter().all(|&row| row == 0));
     }
 }
