@@ -93,6 +93,18 @@ impl Stack {
             pointer: 0,
         }
     }
+
+    fn push(&mut self, value: u16) {
+        assert!((self.pointer as usize) < STACK_SIZE-1);
+        self.stack[(self.pointer as usize)] = value;
+        self.pointer += 1;
+    }
+
+    fn pop(&mut self) -> u16 {
+        assert!(self.pointer > 0);
+        self.pointer -= 1;
+        self.stack[(self.pointer as usize)]
+    }
 }
 
 struct Input {
@@ -133,6 +145,10 @@ impl VM {
 
     fn cls(&mut self) {
         self.graphics.clear();
+    }
+
+    fn ret(&mut self) {
+        self.registers.program_counter = self.stack.pop();
     }
 }
 
@@ -197,5 +213,19 @@ mod tests {
         vm.cls();
 
         assert!(vm.graphics.display.iter().all(|&row| row == 0));
+    }
+
+    #[test]
+    fn test_ret() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 1;
+        vm.stack.push(2);
+        vm.stack.push(3);
+
+        vm.ret();
+
+        assert_eq!(vm.registers.program_counter, 3);
+        assert_eq!(vm.stack.pointer, 1);
+        assert_eq!(vm.stack.stack[0], 2);
     }
 }
