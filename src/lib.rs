@@ -69,6 +69,17 @@ impl VM {
             self.registers.program_counter += 1;
         }
     }
+
+    fn sev(&mut self, vx: u8, vy: u8) {
+        assert!((vx as usize) < registers::V_REGISTERS_SIZE);
+        assert!((vy as usize) < registers::V_REGISTERS_SIZE);
+
+        if self.registers.v[vx as usize] == self.registers.v[vy as usize] {
+            self.registers.program_counter += 2;
+        } else {
+            self.registers.program_counter += 1;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -226,5 +237,47 @@ mod tests {
     fn test_sne_invalid() {
         let mut vm = VM::new();
         vm.sne(16, 1);
+    }
+
+    #[test]
+    fn test_sev_equal() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 4;
+        vm.registers.v[2] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.sev(1, 2);
+
+        assert_eq!(vm.registers.v[1], 4);
+        assert_eq!(vm.registers.v[2], 4);
+        assert_eq!(vm.registers.program_counter, 7);
+    }
+
+    #[test]
+    fn test_sev_not_equal() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 4;
+        vm.registers.v[2] = 5;
+        vm.registers.program_counter = 5;
+
+        vm.sev(1, 2);
+
+        assert_eq!(vm.registers.v[1], 4);
+        assert_eq!(vm.registers.v[2], 5);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sev_invalid_first() {
+        let mut vm = VM::new();
+        vm.sev(16, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sev_invalid_second() {
+        let mut vm = VM::new();
+        vm.sev(0, 16);
     }
 }
