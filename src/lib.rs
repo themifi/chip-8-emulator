@@ -73,6 +73,11 @@ impl VM {
             self.registers.program_counter += 1;
         }
     }
+
+    fn ld(&mut self, vx: u8, value: u8) {
+        self.registers.v[vx as usize] = value;
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -272,5 +277,24 @@ mod tests {
     fn test_sev_invalid_second() {
         let mut vm = VM::new();
         vm.sev(0, 16);
+    }
+
+    #[test]
+    fn test_ld() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.ld(1, 2);
+
+        assert_eq!(vm.registers.v[1], 2);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_ld_invalid() {
+        let mut vm = VM::new();
+        vm.ld(16, 1);
     }
 }
