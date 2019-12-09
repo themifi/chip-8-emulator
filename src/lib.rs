@@ -100,6 +100,13 @@ impl VM {
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
         self.registers.program_counter += 1;
     }
+
+    fn sub(&mut self, vx: u8, vy: u8) {
+        let (result, is_overflow) = self.registers.v[vx as usize].overflowing_sub(self.registers.v[vy as usize]);
+        self.registers.v[vx as usize] = result;
+        self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -405,7 +412,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add() {
+    fn test_add_with_overflow() {
         let mut vm = VM::new();
         vm.registers.v[1] = 200;
         vm.registers.v[2] = 100;
@@ -417,6 +424,22 @@ mod tests {
         assert_eq!(vm.registers.v[1], 44);
         assert_eq!(vm.registers.v[2], 100);
         assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_add_without_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 50;
+        vm.registers.v[2] = 100;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.add(1, 2);
+
+        assert_eq!(vm.registers.v[1], 150);
+        assert_eq!(vm.registers.v[2], 100);
+        assert_eq!(vm.registers.v[0xF], 0);
         assert_eq!(vm.registers.program_counter, 6);
     }
 
@@ -434,4 +457,49 @@ mod tests {
         vm.add(0, 16);
     }
 
+    #[test]
+    fn test_sub_with_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 100;
+        vm.registers.v[2] = 200;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.sub(1, 2);
+
+        assert_eq!(vm.registers.v[1], 156);
+        assert_eq!(vm.registers.v[2], 200);
+        assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_sub_without_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 150;
+        vm.registers.v[2] = 100;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.sub(1, 2);
+
+        assert_eq!(vm.registers.v[1], 50);
+        assert_eq!(vm.registers.v[2], 100);
+        assert_eq!(vm.registers.v[0xF], 0);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sub_invalid_first() {
+        let mut vm = VM::new();
+        vm.sub(16, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sub_invalid_second() {
+        let mut vm = VM::new();
+        vm.sub(0, 16);
+    }
 }
