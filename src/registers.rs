@@ -1,4 +1,4 @@
-const V_REGISTERS_SIZE: usize = 16;
+pub const V_REGISTERS_SIZE: usize = 16;
 
 pub struct Registers {
     pub v: [u8; V_REGISTERS_SIZE],

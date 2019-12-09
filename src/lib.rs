@@ -36,6 +36,7 @@ impl VM {
 
     fn cls(&mut self) {
         self.graphics.clear();
+        self.registers.program_counter += 1;
     }
 
     fn ret(&mut self) {
@@ -44,8 +45,19 @@ impl VM {
 
     fn call(&mut self, addr: u16) {
         assert!((addr & 0xF000) == 0);
+
         self.stack.push(self.registers.program_counter);
         self.registers.program_counter = addr;
+    }
+
+    fn se(&mut self, vx: u8, value: u8) {
+        assert!((vx as usize) < registers::V_REGISTERS_SIZE);
+
+        if self.registers.v[vx as usize] == value {
+            self.registers.program_counter += 2;
+        } else {
+            self.registers.program_counter += 1;
+        }
     }
 }
 
@@ -92,10 +104,12 @@ mod tests {
     fn test_cls() {
         let mut vm = VM::new();
         vm.graphics.display = [u64::MAX; graphics::DISPLAY_ROWS];
+        assert_eq!(vm.registers.program_counter, 0);
 
         vm.cls();
 
         assert!(vm.graphics.display.iter().all(|&row| row == 0));
+        assert_eq!(vm.registers.program_counter, 1);
     }
 
     #[test]
@@ -140,5 +154,36 @@ mod tests {
     fn test_call_invalid_addr_edge_case() {
         let mut vm = VM::new();
         vm.call(0x1000);
+    }
+
+    #[test]
+    fn test_se_equal() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 1;
+        vm.registers.program_counter = 5;
+
+        vm.se(1, 1);
+
+        assert_eq!(vm.registers.v[1], 1);
+        assert_eq!(vm.registers.program_counter, 7);
+    }
+
+    #[test]
+    fn test_se_not_equal() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 1;
+        vm.registers.program_counter = 5;
+
+        vm.se(1, 2);
+
+        assert_eq!(vm.registers.v[1], 1);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_se_invalid() {
+        let mut vm = VM::new();
+        vm.se(16, 1);
     }
 }
