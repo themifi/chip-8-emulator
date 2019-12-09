@@ -51,8 +51,6 @@ impl VM {
     }
 
     fn se(&mut self, vx: u8, value: u8) {
-        assert!((vx as usize) < registers::V_REGISTERS_SIZE);
-
         if self.registers.v[vx as usize] == value {
             self.registers.program_counter += 2;
         } else {
@@ -61,8 +59,6 @@ impl VM {
     }
 
     fn sne(&mut self, vx: u8, value: u8) {
-        assert!((vx as usize) < registers::V_REGISTERS_SIZE);
-
         if self.registers.v[vx as usize] != value {
             self.registers.program_counter += 2;
         } else {
@@ -71,9 +67,6 @@ impl VM {
     }
 
     fn sev(&mut self, vx: u8, vy: u8) {
-        assert!((vx as usize) < registers::V_REGISTERS_SIZE);
-        assert!((vy as usize) < registers::V_REGISTERS_SIZE);
-
         if self.registers.v[vx as usize] == self.registers.v[vy as usize] {
             self.registers.program_counter += 2;
         } else {
