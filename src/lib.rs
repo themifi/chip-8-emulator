@@ -107,6 +107,12 @@ impl VM {
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
         self.registers.program_counter += 1;
     }
+
+    fn shr(&mut self, vx: u8) {
+        self.registers.v[0xF] = self.registers.v[vx as usize] % 2;
+        self.registers.v[vx as usize] >>= 1;
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -501,5 +507,40 @@ mod tests {
     fn test_sub_invalid_second() {
         let mut vm = VM::new();
         vm.sub(0, 16);
+    }
+
+    #[test]
+    fn test_shr_with_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 0b0101;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.shr(1);
+
+        assert_eq!(vm.registers.v[1], 0b0010);
+        assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_shr_without_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 0b1010;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.shr(1);
+
+        assert_eq!(vm.registers.v[1], 0b0101);
+        assert_eq!(vm.registers.v[0xF], 0);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_shr_invalid() {
+        let mut vm = VM::new();
+        vm.shr(16);
     }
 }
