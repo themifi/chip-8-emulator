@@ -132,6 +132,11 @@ impl VM {
         self.registers.i = value;
         self.registers.program_counter += 1;
     }
+
+    fn jpv0(&mut self, addr: u16) {
+        assert!((addr & 0xF000) == 0);
+        self.registers.program_counter = addr + (self.registers.v[0] as u16);
+    }
 }
 
 #[cfg(test)]
@@ -648,10 +653,12 @@ mod tests {
     fn test_ldi() {
         let mut vm = VM::new();
         vm.registers.i = 5;
+        vm.registers.program_counter = 5;
 
-        vm.ldi(0x1111);
+        vm.ldi(0x0111);
 
-        assert_eq!(vm.registers.i, 0x1111);
+        assert_eq!(vm.registers.i, 0x0111);
+        assert_eq!(vm.registers.program_counter, 6);
     }
 
     #[test]
@@ -659,5 +666,23 @@ mod tests {
     fn test_ldi_invalid() {
         let mut vm = VM::new();
         vm.ldi(0xF000);
+    }
+
+    #[test]
+    fn test_jpv0() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 100;
+        vm.registers.v[0] = 5;
+
+        vm.jpv0(20);
+
+        assert_eq!(vm.registers.program_counter, 25);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_jpv0_invalid() {
+        let mut vm = VM::new();
+        vm.jpv0(0xF000);
     }
 }
