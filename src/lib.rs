@@ -126,6 +126,12 @@ impl VM {
         self.registers.v[vx as usize] <<= 1;
         self.registers.program_counter += 1;
     }
+
+    fn ldi(&mut self, value: u16) {
+        assert!((value & 0xF000) == 0);
+        self.registers.i = value;
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -636,5 +642,22 @@ mod tests {
     fn test_shl_invalid() {
         let mut vm = VM::new();
         vm.shr(16);
+    }
+
+    #[test]
+    fn test_ldi() {
+        let mut vm = VM::new();
+        vm.registers.i = 5;
+
+        vm.ldi(0x1111);
+
+        assert_eq!(vm.registers.i, 0x1111);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_ldi_invalid() {
+        let mut vm = VM::new();
+        vm.ldi(0xF000);
     }
 }
