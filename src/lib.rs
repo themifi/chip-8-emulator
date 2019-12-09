@@ -113,6 +113,14 @@ impl VM {
         self.registers.v[vx as usize] >>= 1;
         self.registers.program_counter += 1;
     }
+
+    fn subn(&mut self, vx: u8, vy: u8) {
+        let (result, is_overflow) = self.registers.v[vy as usize].overflowing_sub(self.registers.v[vx as usize]);
+        self.registers.v[vx as usize] = result;
+        self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
+        self.registers.program_counter += 1;
+    }
+
 }
 
 #[cfg(test)]
@@ -542,5 +550,51 @@ mod tests {
     fn test_shr_invalid() {
         let mut vm = VM::new();
         vm.shr(16);
+    }
+
+    #[test]
+    fn test_subn_with_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 200;
+        vm.registers.v[2] = 100;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.subn(1, 2);
+
+        assert_eq!(vm.registers.v[1], 156);
+        assert_eq!(vm.registers.v[2], 100);
+        assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_subn_without_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 100;
+        vm.registers.v[2] = 150;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.subn(1, 2);
+
+        assert_eq!(vm.registers.v[1], 50);
+        assert_eq!(vm.registers.v[2], 150);
+        assert_eq!(vm.registers.v[0xF], 0);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_subn_invalid_first() {
+        let mut vm = VM::new();
+        vm.subn(16, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_subn_invalid_second() {
+        let mut vm = VM::new();
+        vm.subn(0, 16);
     }
 }
