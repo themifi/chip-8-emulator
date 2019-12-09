@@ -1,3 +1,5 @@
+use chip_8_emulator::VM;
+
 fn main() {
-    println!("Hello, world!");
+    let _vm = VM::new();
 }
