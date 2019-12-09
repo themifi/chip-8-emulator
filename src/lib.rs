@@ -83,6 +83,11 @@ impl VM {
         self.registers.v[vx as usize] |= self.registers.v[vy as usize];
         self.registers.program_counter += 1;
     }
+
+    fn and(&mut self, vx: u8, vy: u8) {
+        self.registers.v[vx as usize] &= self.registers.v[vy as usize];
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -329,5 +334,33 @@ mod tests {
     fn test_or_invalid_second() {
         let mut vm = VM::new();
         vm.or(0, 16);
+    }
+
+    #[test]
+    fn test_and() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 0b0101;
+        vm.registers.v[2] = 0b1110;
+        vm.registers.program_counter = 5;
+
+        vm.and(1, 2);
+
+        assert_eq!(vm.registers.v[1], 0b0100);
+        assert_eq!(vm.registers.v[2], 0b1110);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_and_invalid_first() {
+        let mut vm = VM::new();
+        vm.and(16, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_and_invalid_second() {
+        let mut vm = VM::new();
+        vm.and(0, 16);
     }
 }
