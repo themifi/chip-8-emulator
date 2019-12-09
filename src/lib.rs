@@ -93,6 +93,13 @@ impl VM {
         self.registers.v[vx as usize] ^= self.registers.v[vy as usize];
         self.registers.program_counter += 1;
     }
+
+    fn add(&mut self, vx: u8, vy: u8) {
+        let (result, is_overflow) = self.registers.v[vx as usize].overflowing_add(self.registers.v[vy as usize]);
+        self.registers.v[vx as usize] = result;
+        self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -396,4 +403,35 @@ mod tests {
         let mut vm = VM::new();
         vm.xor(0, 16);
     }
+
+    #[test]
+    fn test_add() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 200;
+        vm.registers.v[2] = 100;
+        vm.registers.v[0xF] = 4;
+        vm.registers.program_counter = 5;
+
+        vm.add(1, 2);
+
+        assert_eq!(vm.registers.v[1], 44);
+        assert_eq!(vm.registers.v[2], 100);
+        assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_add_invalid_first() {
+        let mut vm = VM::new();
+        vm.add(16, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_add_invalid_second() {
+        let mut vm = VM::new();
+        vm.add(0, 16);
+    }
+
 }
