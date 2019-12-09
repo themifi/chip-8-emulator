@@ -78,6 +78,11 @@ impl VM {
         self.registers.v[vx as usize] = value;
         self.registers.program_counter += 1;
     }
+
+    fn or(&mut self, vx: u8, vy: u8) {
+        self.registers.v[vx as usize] |= self.registers.v[vy as usize];
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -296,5 +301,33 @@ mod tests {
     fn test_ld_invalid() {
         let mut vm = VM::new();
         vm.ld(16, 1);
+    }
+
+    #[test]
+    fn test_or() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 0xF0;
+        vm.registers.v[2] = 0x0F;
+        vm.registers.program_counter = 5;
+
+        vm.or(1, 2);
+
+        assert_eq!(vm.registers.v[1], 0xFF);
+        assert_eq!(vm.registers.v[2], 0x0F);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_or_invalid_first() {
+        let mut vm = VM::new();
+        vm.or(16, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_or_invalid_second() {
+        let mut vm = VM::new();
+        vm.or(0, 16);
     }
 }
