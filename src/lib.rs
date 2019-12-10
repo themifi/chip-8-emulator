@@ -4,6 +4,9 @@ mod graphics;
 mod stack;
 mod input;
 
+use rand::{Rng, SeedableRng};
+use rand::rngs::SmallRng;
+
 use memory::Memory;
 use registers::Registers;
 use graphics::Graphics;
@@ -16,6 +19,7 @@ pub struct VM {
     stack: Stack,
     graphics: Graphics,
     input: Input,
+    rng: SmallRng,
 }
 
 impl VM {
@@ -26,6 +30,7 @@ impl VM {
             stack: Stack::new(),
             graphics: Graphics::new(),
             input: Input::new(),
+            rng: SmallRng::seed_from_u64(0),
         }
     }
 
@@ -136,6 +141,12 @@ impl VM {
     fn jpv0(&mut self, addr: u16) {
         assert!((addr & 0xF000) == 0);
         self.registers.program_counter = addr + (self.registers.v[0] as u16);
+    }
+
+    fn rnd(&mut self, vx: u8, mask: u8) {
+        let value = self.rng.gen::<u8>() & mask;
+        self.registers.v[vx as usize] = value;
+        self.registers.program_counter += 1;
     }
 }
 
@@ -684,5 +695,30 @@ mod tests {
     fn test_jpv0_invalid() {
         let mut vm = VM::new();
         vm.jpv0(0xF000);
+    }
+
+    #[test]
+    fn test_rnd() {
+        let mut vm = VM::new();
+        vm.rng = SmallRng::seed_from_u64(0xFF);
+        vm.registers.program_counter = 5;
+        vm.registers.v[1] = 0xAF;
+
+        vm.rnd(1, 0xFF);
+
+        assert_eq!(vm.registers.v[1], 181);
+        assert_eq!(vm.registers.program_counter, 6);
+
+        vm.rnd(1, 0x0F);
+
+        assert_eq!(vm.registers.v[1], 5);
+        assert_eq!(vm.registers.program_counter, 7);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_rnd_invalid() {
+        let mut vm = VM::new();
+        vm.rnd(0xFF, 0);
     }
 }
