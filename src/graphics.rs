@@ -26,7 +26,7 @@ impl Graphics {
             let row = *sprite_row as u64;
             let row = row.rotate_left(x as u32);
             let row_y = (y + i) % DISPLAY_ROWS;
-            is_collision = is_collision || (self.display[row_y] & !row) != 0;
+            is_collision = is_collision || (self.display[row_y] & row) != 0;
             self.display[row_y] ^= row;
         }
 
@@ -97,6 +97,16 @@ mod tests {
         let sprite = [0b01000011];
         let is_collision = graphics.draw_sprite(0, 0, &sprite);
         assert_eq!(graphics.display[0], 0b10011111);
+        assert!(is_collision);
+    }
+
+    #[test]
+    fn test_draw_sprite_collision_one_bit() {
+        let mut graphics = Graphics::new();
+        graphics.display[0] = 0x1;
+        let sprite = [0x1];
+        let is_collision = graphics.draw_sprite(0, 0, &sprite);
+        assert_eq!(graphics.display[0], 0x0);
         assert!(is_collision);
     }
 }

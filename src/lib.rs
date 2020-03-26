@@ -148,6 +148,13 @@ impl VM {
         self.registers.v[vx as usize] = value;
         self.registers.program_counter += 1;
     }
+
+    fn drw(&mut self, vx: u8, vy: u8, n: u8) {
+        let sprite = self.memory.get_slice(self.registers.i as usize, self.registers.i as usize + n as usize);
+        let is_collision = self.graphics.draw_sprite(vx as usize, vy as usize, sprite);
+        self.registers.v[0xF] = if is_collision { 1 } else { 0 };
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -720,5 +727,41 @@ mod tests {
     fn test_rnd_invalid() {
         let mut vm = VM::new();
         vm.rnd(0xFF, 0);
+    }
+
+    #[test]
+    fn test_drw() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        let location = 0x100;
+        vm.registers.i = location as u16;
+        vm.registers.v[0xF] = 2;
+        let sprite = [0x20, 0x60, 0x20, 0x20, 0x70];
+        vm.memory.get_slice_mut(location, location + sprite.len()).copy_from_slice(&sprite);
+
+        vm.drw(4, 4, 5);
+
+        let screen = [0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
+        assert_eq!(&vm.graphics.display[0..10], &screen);
+        assert_eq!(vm.registers.v[0xF], 0);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_drw_collision() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        let location = 0x100;
+        vm.registers.i = location as u16;
+        vm.registers.v[0xF] = 2;
+        let sprite = [0xFF];
+        vm.memory.get_slice_mut(location, location + sprite.len()).copy_from_slice(&sprite);
+        vm.graphics.display[0] = 0x1;
+
+        vm.drw(0, 0, 1);
+
+        assert_eq!(vm.graphics.display[0], 0xFE);
+        assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.program_counter, 6);
     }
 }

@@ -35,6 +35,18 @@ impl Memory {
         memory.memory[0..80].copy_from_slice(&INITIAL_SPRITES);
         memory
     }
+
+    pub fn get_slice(&self, start: usize, finish: usize) -> &[u8] {
+        assert!(start < MEMORY_SIZE);
+        assert!(finish < MEMORY_SIZE);
+        &self.memory[start..finish]
+    }
+
+    pub fn get_slice_mut(&mut self, start: usize, finish: usize) -> &mut [u8] {
+        assert!(start < MEMORY_SIZE);
+        assert!(finish < MEMORY_SIZE);
+        &mut self.memory[start..finish]
+    }
 }
 
 #[cfg(test)]
