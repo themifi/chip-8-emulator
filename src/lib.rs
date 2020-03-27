@@ -173,6 +173,11 @@ impl VM {
         self.registers.sound_timer = self.registers.v[x as usize] as u16;
         self.registers.program_counter += 1;
     }
+
+    fn add_i(&mut self, x: u8) {
+        self.registers.i += self.registers.v[x as usize] as u16;
+        self.registers.program_counter += 1;       
+    }
 }
 
 #[cfg(test)]
@@ -850,6 +855,19 @@ mod tests {
         vm.ld_st(0x2);
 
         assert_eq!(vm.registers.v[0x2], sound_timer_value);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_add_i() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        vm.registers.i = 10;
+        vm.registers.v[0x2] = 5;
+
+        vm.add_i(0x2);
+
+        assert_eq!(vm.registers.i, 15);
         assert_eq!(vm.registers.program_counter, 6);
     }
 }
