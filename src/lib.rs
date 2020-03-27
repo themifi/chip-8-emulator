@@ -159,6 +159,10 @@ impl VM {
     fn skp(&mut self, x: u8) {
         self.registers.program_counter += if self.input.is_key_pressed(x) { 2 } else { 1 };
     }
+
+    fn sknp(&mut self, x: u8) {
+        self.registers.program_counter += if self.input.is_key_pressed(x) { 1 } else { 2 };
+    }
 }
 
 #[cfg(test)]
@@ -789,5 +793,27 @@ mod tests {
         vm.skp(4);
 
         assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_sknp_key_pressed() {
+        let mut vm = VM::new();
+        vm.input = Input::new_with_state(0b100);
+        vm.registers.program_counter = 5;
+
+        vm.sknp(2);
+
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_sknp_key_unpressed() {
+        let mut vm = VM::new();
+        vm.input = Input::new_with_state(0b100);
+        vm.registers.program_counter = 5;
+
+        vm.sknp(4);
+
+        assert_eq!(vm.registers.program_counter, 7);
     }
 }
