@@ -155,6 +155,10 @@ impl VM {
         self.registers.v[0xF] = if is_collision { 1 } else { 0 };
         self.registers.program_counter += 1;
     }
+
+    fn skp(&mut self, x: u8) {
+        self.registers.program_counter += if self.input.is_key_pressed(x) { 2 } else { 1 };
+    }
 }
 
 #[cfg(test)]
@@ -762,6 +766,28 @@ mod tests {
 
         assert_eq!(vm.graphics.display[0], 0xFE);
         assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_skp_key_pressed() {
+        let mut vm = VM::new();
+        vm.input = Input::new_with_state(0b100);
+        vm.registers.program_counter = 5;
+
+        vm.skp(2);
+
+        assert_eq!(vm.registers.program_counter, 7);
+    }
+
+    #[test]
+    fn test_skp_key_unpressed() {
+        let mut vm = VM::new();
+        vm.input = Input::new_with_state(0b100);
+        vm.registers.program_counter = 5;
+
+        vm.skp(4);
+
         assert_eq!(vm.registers.program_counter, 6);
     }
 }
