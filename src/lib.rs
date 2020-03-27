@@ -163,6 +163,11 @@ impl VM {
     fn sknp(&mut self, x: u8) {
         self.registers.program_counter += if self.input.is_key_pressed(x) { 1 } else { 2 };
     }
+
+    fn ld_dt(&mut self, x: u8) {
+        self.registers.delay_timer = self.registers.v[x as usize] as u16;
+        self.registers.program_counter += 1;
+    }
 }
 
 #[cfg(test)]
@@ -815,5 +820,18 @@ mod tests {
         vm.sknp(4);
 
         assert_eq!(vm.registers.program_counter, 7);
+    }
+
+    #[test]
+    fn test_ld_dt() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        let delay_timer_value = 0xFA;
+        vm.registers.v[0x1] = delay_timer_value;
+
+        vm.ld_dt(0x1);
+
+        assert_eq!(vm.registers.v[0x1], delay_timer_value);
+        assert_eq!(vm.registers.program_counter, 6);
     }
 }
