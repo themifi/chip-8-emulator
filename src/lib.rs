@@ -178,6 +178,13 @@ impl VM {
         self.registers.i += self.registers.v[x as usize] as u16;
         self.registers.program_counter += 1;       
     }
+
+    fn ld_f(&mut self, x: u8) {
+        let sprite_num = self.registers.v[x as usize] as usize;
+        let sprite_location = memory::SPRITE_START_LOCATION + (sprite_num * memory::SPRITE_SIZE);
+        self.registers.i = sprite_location as u16;
+        self.registers.program_counter += 1;       
+    }
 }
 
 #[cfg(test)]
@@ -870,4 +877,21 @@ mod tests {
         assert_eq!(vm.registers.i, 15);
         assert_eq!(vm.registers.program_counter, 6);
     }
+
+    #[test]
+    fn test_ld_f() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        vm.registers.i = 10;
+        vm.registers.v[0x2] = 5;
+
+        vm.ld_f(0x2);
+
+        assert_eq!(vm.registers.i, 25);
+        let sprite_five = [0xF0, 0x80, 0xF0, 0x10, 0xF0];
+        let sprite = vm.memory.get_slice(vm.registers.i as usize, vm.registers.i as usize + memory::SPRITE_SIZE);
+        assert_eq!(sprite, &sprite_five);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
 }
