@@ -72,8 +72,14 @@ impl VM {
         self.registers.program_counter = addr;
     }
 
-    fn se(&mut self, vx: u8, value: u8) {
-        if self.registers.v[vx as usize] == value {
+    /// Skip next instruction if `Vx` = `value`.
+    ///
+    /// Code: `3xkk`
+    ///
+    /// The interpreter compares register `Vx` to `value`, and if they are
+    /// equal, increments the program counter by 2.
+    fn se(&mut self, x: u8, value: u8) {
+        if self.registers.v[x as usize] == value {
             self.registers.program_counter += 2;
         } else {
             self.registers.program_counter += 1;
