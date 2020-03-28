@@ -114,8 +114,13 @@ impl VM {
         }
     }
 
-    fn ld_vx(&mut self, vx: u8, value: u8) {
-        self.registers.v[vx as usize] = value;
+    /// Set `Vx` = `value`.
+    ///
+    /// Code: `6xkk`
+    ///
+    /// The interpreter puts the value `value` into register `Vx`.
+    fn ld_vx(&mut self, x: u8, value: u8) {
+        self.registers.v[x as usize] = value;
         self.registers.program_counter += 1;
     }
 
