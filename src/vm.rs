@@ -58,10 +58,13 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn ret(&mut self) {
-        self.registers.program_counter = self.stack.pop();
-    }
-
+    /// Call subroutine at `addr`.
+    ///
+    /// Code: `2nnn`
+    ///
+    /// The interpreter increments the stack pointer, then puts the current
+    /// program counter on the top of the stack. The program counter is then
+    /// set to `addr`.
     fn call(&mut self, addr: u16) {
         assert!((addr & 0xF000) == 0);
 
