@@ -383,6 +383,13 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `I` = location of sprite for digit `Vx`.
+    ///
+    /// Code: `Fx29`
+    ///
+    /// The value of `I` is set to the location for the hexadecimal sprite
+    /// corresponding to the value of `Vx`. See section Display for more
+    /// information on the Chip-8 hexadecimal font.
     fn ld_f(&mut self, x: u8) {
         let sprite_num = self.registers.v[x as usize] as usize;
         let sprite_location = SPRITE_START_LOCATION + (sprite_num * SPRITE_SIZE);
