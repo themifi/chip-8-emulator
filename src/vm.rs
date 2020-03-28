@@ -287,9 +287,26 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Display `n`-byte sprite starting at memory location `I` at (`Vx`, `Vy`),
+    /// set `VF` = collision.
+    ///
+    /// Code: `Dxyn`
+    ///
+    /// The interpreter reads `n` bytes from memory, starting at the address
+    /// stored in `I`. These bytes are then displayed as sprites on screen at
+    /// coordinates (`Vx`, `Vy`). Sprites are XORed onto the existing screen.
+    /// If this causes any pixels to be erased, `VF` is set to 1, otherwise it
+    /// is set to 0. If the sprite is positioned so part of it is outside the
+    /// coordinates of the display, it wraps around to the opposite side of the
+    /// screen. See instruction `8xy3` for more information on XOR, and section
+    /// Display for more information on the Chip-8 screen and sprites.
     fn drw(&mut self, vx: u8, vy: u8, n: u8) {
-        let sprite = self.memory.get_slice(self.registers.i as usize, self.registers.i as usize + n as usize);
+        let sprite_start = self.registers.i as usize;
+        let sprite_end = sprite_start + n as usize;
+        let sprite = self.memory.get_slice(sprite_start, sprite_end);
+
         let is_collision = self.graphics.draw_sprite(vx as usize, vy as usize, sprite);
+
         self.registers.v[0xF] = if is_collision { 1 } else { 0 };
         self.registers.program_counter += 1;
     }
