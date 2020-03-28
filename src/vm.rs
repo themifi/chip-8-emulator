@@ -136,6 +136,11 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `Vx` = `Vy`.
+    ///
+    /// Code: `8xy0`
+    ///
+    /// Stores the value of register `Vy` in register `Vx`.
     fn ld_vx_vy(&mut self, x: u8, y: u8) {
         self.registers.v[x as usize] = self.registers.v[y as usize];
         self.registers.program_counter += 1;
