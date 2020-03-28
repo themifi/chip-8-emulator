@@ -146,6 +146,14 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `Vx` = `Vx` OR `Vy`.
+    ///
+    /// Code: `8xy1`
+    ///
+    /// Performs a bitwise OR on the values of `Vx` and `Vy`, then stores the
+    /// result in `Vx`. A bitwise OR compares the corrseponding bits from two
+    /// values, and if either bit is 1, then the same bit in the result is also
+    /// 1. Otherwise, it is 0.
     fn or(&mut self, vx: u8, vy: u8) {
         self.registers.v[vx as usize] |= self.registers.v[vy as usize];
         self.registers.program_counter += 1;
