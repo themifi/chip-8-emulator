@@ -199,6 +199,17 @@ impl VM {
         slice[2] = ones;
         self.registers.program_counter += 1;       
     }
+
+    fn ld_i(&mut self, x: u8) {
+        let registers = &self.registers.v[0..=x as usize];
+        let start_memory_pos = self.registers.i as usize;
+        let finis_memory_pos = start_memory_pos + registers.len();
+        let memory = self.memory.get_slice_mut(start_memory_pos, finis_memory_pos);
+
+        memory.copy_from_slice(registers);
+
+        self.registers.program_counter += 1;       
+    }
 }
 
 #[cfg(test)]
@@ -919,6 +930,20 @@ mod tests {
 
         assert_eq!(vm.memory.get_slice(100, 103), &[1, 2, 3]);
         assert_eq!(vm.registers.i, 100);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_ld_i() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        vm.registers.i = 0x100;
+        let registers = (0x0..=0xF).collect::<Vec<u8>>();
+        vm.registers.v.copy_from_slice(&registers);
+
+        vm.ld_i(0xF);
+
+        assert_eq!(vm.memory.get_slice(0x100, 0x110), registers.as_slice());
         assert_eq!(vm.registers.program_counter, 6);
     }
 }
