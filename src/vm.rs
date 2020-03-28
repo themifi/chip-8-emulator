@@ -342,6 +342,17 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Wait for a key press, store the value of the key in `Vx`.
+    ///
+    /// Code: `Fx0A`
+    ///
+    /// All execution stops until a key is pressed, then the value of that key
+    /// is stored in `Vx`.
+    fn ld_vx_k(&mut self, x: u8) {
+        // TODO: implement
+        unimplemented!();
+    }
+
     fn ld_st(&mut self, x: u8) {
         self.registers.sound_timer = self.registers.v[x as usize] as u16;
         self.registers.program_counter += 1;
