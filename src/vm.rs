@@ -74,7 +74,7 @@ impl VM {
         }
     }
 
-    fn ld(&mut self, vx: u8, value: u8) {
+    fn ld_vx(&mut self, vx: u8, value: u8) {
         self.registers.v[vx as usize] = value;
         self.registers.program_counter += 1;
     }
@@ -82,6 +82,11 @@ impl VM {
     fn add_vx(&mut self, vx: u8, value: u8) {
         let result = self.registers.v[vx as usize].wrapping_add(value);
         self.registers.v[vx as usize] = result;
+        self.registers.program_counter += 1;
+    }
+
+    fn ld_vx_vy(&mut self, x: u8, y: u8) {
+        self.registers.v[x as usize] = self.registers.v[y as usize];
         self.registers.program_counter += 1;
     }
 
@@ -177,14 +182,14 @@ impl VM {
 
     fn add_i(&mut self, x: u8) {
         self.registers.i += self.registers.v[x as usize] as u16;
-        self.registers.program_counter += 1;       
+        self.registers.program_counter += 1;
     }
 
     fn ld_f(&mut self, x: u8) {
         let sprite_num = self.registers.v[x as usize] as usize;
         let sprite_location = SPRITE_START_LOCATION + (sprite_num * SPRITE_SIZE);
         self.registers.i = sprite_location as u16;
-        self.registers.program_counter += 1;       
+        self.registers.program_counter += 1;
     }
 
     fn ld_b(&mut self, x: u8) {
@@ -198,7 +203,7 @@ impl VM {
         slice[0] = hundreds;
         slice[1] = tens;
         slice[2] = ones;
-        self.registers.program_counter += 1;       
+        self.registers.program_counter += 1;
     }
 
     fn ld_i(&mut self, x: u8) {
@@ -209,7 +214,7 @@ impl VM {
 
         memory.copy_from_slice(registers);
 
-        self.registers.program_counter += 1;       
+        self.registers.program_counter += 1;
     }
 
     fn ld_v(&mut self, x: u8) {
@@ -425,12 +430,12 @@ mod tests {
     }
 
     #[test]
-    fn test_ld() {
+    fn test_ld_vx() {
         let mut vm = VM::new();
         vm.registers.v[1] = 4;
         vm.registers.program_counter = 5;
 
-        vm.ld(1, 2);
+        vm.ld_vx(1, 2);
 
         assert_eq!(vm.registers.v[1], 2);
         assert_eq!(vm.registers.program_counter, 6);
@@ -438,9 +443,9 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_ld_invalid() {
+    fn test_ld_vx_invalid() {
         let mut vm = VM::new();
-        vm.ld(16, 1);
+        vm.ld_vx(16, 1);
     }
 
     #[test]
@@ -465,6 +470,34 @@ mod tests {
 
         assert_eq!(vm.registers.v[1], 0);
         assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_ld_vx_vy() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 4;
+        vm.registers.v[2] = 7;
+        vm.registers.program_counter = 5;
+
+        vm.ld_vx_vy(1, 2);
+
+        assert_eq!(vm.registers.v[1], 7);
+        assert_eq!(vm.registers.v[2], 7);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_ld_vx_vy_invalid_x() {
+        let mut vm = VM::new();
+        vm.ld_vx_vy(16, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_ld_vx_vy_invalid_y() {
+        let mut vm = VM::new();
+        vm.ld_vx_vy(1, 16);
     }
 
     #[test]
