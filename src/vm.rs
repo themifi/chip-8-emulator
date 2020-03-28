@@ -322,6 +322,12 @@ impl VM {
         self.registers.program_counter += increment_value;
     }
 
+    /// Skip next instruction if key with the value of `Vx` is not pressed.
+    ///
+    /// Code: `ExA1`
+    ///
+    /// Checks the keyboard, and if the key corresponding to the value of `Vx`
+    /// is currently in the up position, program counter is increased by 2.
     fn sknp(&mut self, x: u8) {
         self.registers.program_counter += if self.input.is_key_pressed(x) { 1 } else { 2 };
     }
