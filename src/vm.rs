@@ -240,8 +240,15 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `Vx` = `Vx` SHL 1.
+    ///
+    /// Code: `8xyE`
+    ///
+    /// If the most-significant bit of `Vx` is 1, then `VF` is set to 1,
+    /// otherwise to 0. Then `Vx` is multiplied by 2.
     fn shl(&mut self, vx: u8) {
-        self.registers.v[0xF] = if self.registers.v[vx as usize] >= 0b10000000 { 1 } else { 0 };
+        let significant_bit = self.registers.v[vx as usize] >= 0b10000000;
+        self.registers.v[0xF] = if significant_bit { 1 } else { 0 };
         self.registers.v[vx as usize] <<= 1;
         self.registers.program_counter += 1;
     }
