@@ -79,6 +79,12 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    fn add_vx(&mut self, vx: u8, value: u8) {
+        let result = self.registers.v[vx as usize].wrapping_add(value);
+        self.registers.v[vx as usize] = result;
+        self.registers.program_counter += 1;
+    }
+
     fn or(&mut self, vx: u8, vy: u8) {
         self.registers.v[vx as usize] |= self.registers.v[vy as usize];
         self.registers.program_counter += 1;
@@ -435,6 +441,30 @@ mod tests {
     fn test_ld_invalid() {
         let mut vm = VM::new();
         vm.ld(16, 1);
+    }
+
+    #[test]
+    fn test_add_vx() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 200;
+        vm.registers.program_counter = 5;
+
+        vm.add_vx(1, 50);
+
+        assert_eq!(vm.registers.v[1], 250);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_add_vx_overflow() {
+        let mut vm = VM::new();
+        vm.registers.v[1] = 255;
+        vm.registers.program_counter = 5;
+
+        vm.add_vx(1, 1);
+
+        assert_eq!(vm.registers.v[1], 0);
+        assert_eq!(vm.registers.program_counter, 6);
     }
 
     #[test]
