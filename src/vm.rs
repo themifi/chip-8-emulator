@@ -172,6 +172,14 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `Vx` = `Vx` XOR `Vy`.
+    ///
+    /// Code: `8xy3`
+    ///
+    /// Performs a bitwise exclusive OR on the values of `Vx` and `Vy`, then
+    /// stores the result in `Vx`. An exclusive OR compares the corrseponding
+    /// bits from two values, and if the bits are not both the same, then the
+    /// corresponding bit in the result is set to 1. Otherwise, it is 0.
     fn xor(&mut self, vx: u8, vy: u8) {
         self.registers.v[vx as usize] ^= self.registers.v[vy as usize];
         self.registers.program_counter += 1;
