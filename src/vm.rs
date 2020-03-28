@@ -436,6 +436,12 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Read registers `V0` through `Vx` from memory starting at location `I`.
+    ///
+    /// Code: `Fx65`
+    ///
+    /// The interpreter reads values from memory starting at location `I` into
+    /// registers `V0` through `Vx`.
     fn ld_vx_i(&mut self, x: u8) {
         let registers = &mut self.registers.v[0..=x as usize];
         let start_memory_pos = self.registers.i as usize;
