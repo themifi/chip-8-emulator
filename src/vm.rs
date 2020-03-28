@@ -100,8 +100,14 @@ impl VM {
         }
     }
 
-    fn se_v(&mut self, vx: u8, vy: u8) {
-        if self.registers.v[vx as usize] == self.registers.v[vy as usize] {
+    /// Skip next instruction if `Vx` = `Vy`.
+    ///
+    /// Code: `5xy0`
+    ///
+    /// The interpreter compares register `Vx` to register `Vy`, and if they
+    /// are equal, increments the program counter by 2.
+    fn se_v(&mut self, x: u8, y: u8) {
+        if self.registers.v[x as usize] == self.registers.v[y as usize] {
             self.registers.program_counter += 2;
         } else {
             self.registers.program_counter += 1;
