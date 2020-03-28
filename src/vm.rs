@@ -86,8 +86,14 @@ impl VM {
         }
     }
 
-    fn sne(&mut self, vx: u8, value: u8) {
-        if self.registers.v[vx as usize] != value {
+    /// Skip next instruction if `Vx` != `value`.
+    ///
+    /// Code: `4xkk`
+    ///
+    /// The interpreter compares register `Vx` to `value`, and if they are not
+    /// equal, increments the program counter by 2.
+    fn sne(&mut self, x: u8, value: u8) {
+        if self.registers.v[x as usize] != value {
             self.registers.program_counter += 2;
         } else {
             self.registers.program_counter += 1;
