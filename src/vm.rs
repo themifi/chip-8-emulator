@@ -264,7 +264,12 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn jpv0(&mut self, addr: u16) {
+    /// Jump to location `addr` + `V0`.
+    ///
+    /// Code: `Bnnn`
+    ///
+    /// The program counter is set to `addr` plus the value of `V0`.
+    fn jp_v0(&mut self, addr: u16) {
         assert!((addr & 0xF000) == 0);
         self.registers.program_counter = addr + (self.registers.v[0] as u16);
     }
@@ -932,21 +937,21 @@ mod tests {
     }
 
     #[test]
-    fn test_jpv0() {
+    fn test_jp_v0() {
         let mut vm = VM::new();
         vm.registers.program_counter = 100;
         vm.registers.v[0] = 5;
 
-        vm.jpv0(20);
+        vm.jp_v0(20);
 
         assert_eq!(vm.registers.program_counter, 25);
     }
 
     #[test]
     #[should_panic]
-    fn test_jpv0_invalid() {
+    fn test_jp_v0_invalid() {
         let mut vm = VM::new();
-        vm.jpv0(0xF000);
+        vm.jp_v0(0xF000);
     }
 
     #[test]
