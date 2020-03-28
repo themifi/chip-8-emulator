@@ -338,7 +338,7 @@ impl VM {
     ///
     /// The value of delay timer is placed into `Vx`.
     fn ld_vx_dt(&mut self, x: u8) {
-        self.registers.delay_timer = self.registers.v[x as usize] as u16;
+        self.registers.delay_timer = self.registers.v[x as usize];
         self.registers.program_counter += 1;
     }
 
@@ -354,7 +354,7 @@ impl VM {
     }
 
     fn ld_st(&mut self, x: u8) {
-        self.registers.sound_timer = self.registers.v[x as usize] as u16;
+        self.registers.sound_timer = self.registers.v[x as usize];
         self.registers.program_counter += 1;
     }
 
