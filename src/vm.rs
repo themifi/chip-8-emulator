@@ -373,6 +373,11 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `I` = `I` + `Vx`.
+    ///
+    /// Code: `Fx1E`
+    ///
+    /// The values of `I` and `Vx` are added, and the results are stored in `I`.
     fn add_i(&mut self, x: u8) {
         self.registers.i += self.registers.v[x as usize] as u16;
         self.registers.program_counter += 1;
