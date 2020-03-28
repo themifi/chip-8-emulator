@@ -226,10 +226,17 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn subn(&mut self, vx: u8, vy: u8) {
-        let (result, is_overflow) = self.registers.v[vy as usize].overflowing_sub(self.registers.v[vx as usize]);
-        self.registers.v[vx as usize] = result;
-        self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
+    /// Set `Vx` = `Vy` - `Vx`, set `VF` = NOT borrow.
+    ///
+    /// Code: `8xy7`
+    ///
+    /// If `Vy` > `Vx`, then `VF` is set to 1, otherwise 0. Then `Vx` is
+    /// subtracted from `Vy`, and the results stored in `Vx`.
+    fn subn(&mut self, x: u8, y: u8) {
+        let (result, is_overflow) = self.registers.v[y as usize]
+            .overflowing_sub(self.registers.v[x as usize]);
+        self.registers.v[x as usize] = result;
+        self.registers.v[0xF] = if is_overflow { 1 } else { 0 }; // FIXME
         self.registers.program_counter += 1;
     }
 
