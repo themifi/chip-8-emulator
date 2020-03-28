@@ -397,14 +397,22 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Store BCD representation of `Vx` in memory locations `I`, `I+1`, and
+    /// `I+2`.
+    ///
+    /// Code: `Fx33`
+    ///
+    /// The interpreter takes the decimal value of `Vx`, and places the
+    /// hundreds digit in memory at location in `I`, the tens digit at location
+    /// `I+1`, and the ones digit at location `I+2`.
     fn ld_b(&mut self, x: u8) {
         let number = self.registers.v[x as usize];
         let ones = number % 10;
         let tens = number / 10 % 10;
         let hundreds = number / 100;
 
-        let start_position = self.registers.i as usize;
-        let slice = self.memory.get_slice_mut(start_position, start_position + 3);
+        let start_pos = self.registers.i as usize;
+        let slice = self.memory.get_slice_mut(start_pos, start_pos + 3);
         slice[0] = hundreds;
         slice[1] = tens;
         slice[2] = ones;
