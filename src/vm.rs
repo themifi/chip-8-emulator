@@ -332,7 +332,12 @@ impl VM {
         self.registers.program_counter += if self.input.is_key_pressed(x) { 1 } else { 2 };
     }
 
-    fn ld_dt(&mut self, x: u8) {
+    /// Set `Vx` = delay timer value.
+    ///
+    /// Code: `Fx07`
+    ///
+    /// The value of delay timer is placed into `Vx`.
+    fn ld_vx_dt(&mut self, x: u8) {
         self.registers.delay_timer = self.registers.v[x as usize] as u16;
         self.registers.program_counter += 1;
     }
@@ -1097,13 +1102,13 @@ mod tests {
     }
 
     #[test]
-    fn test_ld_dt() {
+    fn test_ld_vx_dt() {
         let mut vm = VM::new();
         vm.registers.program_counter = 5;
         let delay_timer_value = 0xFA;
         vm.registers.v[0x1] = delay_timer_value;
 
-        vm.ld_dt(0x1);
+        vm.ld_vx_dt(0x1);
 
         assert_eq!(vm.registers.v[0x1], delay_timer_value);
         assert_eq!(vm.registers.program_counter, 6);
