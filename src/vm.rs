@@ -50,6 +50,9 @@ impl VM {
         self.registers.program_counter = addr;
     }
 
+    /// Clear the display.
+    ///
+    /// Code: `00E0`
     fn cls(&mut self) {
         self.graphics.clear();
         self.registers.program_counter += 1;
