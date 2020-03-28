@@ -29,7 +29,16 @@ impl VM {
         }
     }
 
-    fn jump(&mut self, addr: u16) {
+    /// Return from a subroutine.
+    ///
+    /// Code: `00EE`
+    ///
+    /// The interpreter sets the program counter to the address at the top of
+    /// the stack, then subtracts 1 from the stack pointer.
+    fn ret(&mut self) {
+        self.registers.program_counter = self.stack.pop();
+    }
+
         assert!((addr & 0xF000) == 0);
         self.registers.program_counter = addr;
     }
