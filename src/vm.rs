@@ -124,9 +124,15 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn add_vx(&mut self, vx: u8, value: u8) {
-        let result = self.registers.v[vx as usize].wrapping_add(value);
-        self.registers.v[vx as usize] = result;
+    /// Set `Vx` = `Vx` + `value`.
+    ///
+    /// Code: `7xkk`
+    ///
+    /// Adds the value `value` to the value of register `Vx`, then stores the
+    /// result in `Vx`.
+    fn add_vx(&mut self, x: u8, value: u8) {
+        let result = self.registers.v[x as usize].wrapping_add(value);
+        self.registers.v[x as usize] = result;
         self.registers.program_counter += 1;
     }
 
