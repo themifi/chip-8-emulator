@@ -403,37 +403,30 @@ mod tests {
     use super::super::graphics::DISPLAY_ROWS;
 
     #[test]
-    fn test_jump_opcode() {
+    fn test_jp() {
         let mut vm = VM::new();
         let addr = 16u16;
 
-        vm.jump(addr);
+        vm.jp(addr);
 
         assert_eq!(vm.registers.program_counter, addr);
     }
 
     #[test]
-    fn test_jump_edge_case() {
+    fn test_jp_edge_case() {
         let mut vm = VM::new();
         let addr = 0x0FFF;
 
-        vm.jump(addr);
+        vm.jp(addr);
 
         assert_eq!(vm.registers.program_counter, addr);
     }
 
     #[test]
     #[should_panic]
-    fn test_jump_incorrect_addr() {
+    fn test_jp_incorrect_addr() {
         let mut vm = VM::new();
-        vm.jump(0xFFFFu16);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_jump_incorrect_addr_edge_case() {
-        let mut vm = VM::new();
-        vm.jump(0x1000);
+        vm.jp(0x1000);
     }
 
     #[test]
