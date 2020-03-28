@@ -419,6 +419,12 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Store registers `V0` through `Vx` in memory starting at location `I`.
+    ///
+    /// Code: `Fx55`
+    ///
+    /// The interpreter copies the values of registers `V0` through `Vx` into
+    /// memory, starting at the address in `I`.
     fn ld_i_vx(&mut self, x: u8) {
         let registers = &self.registers.v[0..=x as usize];
         let start_memory_pos = self.registers.i as usize;
