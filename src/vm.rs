@@ -363,6 +363,11 @@ impl VM {
         unimplemented!();
     }
 
+    /// Set sound timer = `Vx`.
+    ///
+    /// Code: `Fx18`
+    ///
+    /// Sound timer is set equal to the value of `Vx`.
     fn ld_st(&mut self, x: u8) {
         self.registers.sound_timer = self.registers.v[x as usize];
         self.registers.program_counter += 1;
