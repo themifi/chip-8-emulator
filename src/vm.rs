@@ -185,9 +185,17 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn add_vx_vy(&mut self, vx: u8, vy: u8) {
-        let (result, is_overflow) = self.registers.v[vx as usize].overflowing_add(self.registers.v[vy as usize]);
-        self.registers.v[vx as usize] = result;
+    /// Set `Vx` = `Vx` + `Vy`, set `VF` = carry.
+    ///
+    /// Code: `8xy4`
+    ///
+    /// The values of `Vx` and `Vy` are added together. If the result is greater
+    /// than 8 bits (i.e., > 255,) `VF` is set to 1, otherwise 0. Only the
+    /// lowest 8 bits of the result are kept, and stored in `Vx`.
+    fn add_vx_vy(&mut self, x: u8, y: u8) {
+        let (result, is_overflow) = self.registers.v[x as usize]
+            .overflowing_add(self.registers.v[y as usize]);
+        self.registers.v[x as usize] = result;
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
         self.registers.program_counter += 1;
     }
