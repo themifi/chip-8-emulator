@@ -214,6 +214,12 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `Vx` = `Vx` SHR 1.
+    ///
+    /// Code: `8xy6`
+    ///
+    /// If the least-significant bit of `Vx` is 1, then `VF` is set to 1,
+    /// otherwise 0. Then `Vx` is divided by 2.
     fn shr(&mut self, vx: u8) {
         self.registers.v[0xF] = self.registers.v[vx as usize] % 2;
         self.registers.v[vx as usize] >>= 1;
