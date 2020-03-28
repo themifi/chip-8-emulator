@@ -253,6 +253,11 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `I` = `value`.
+    ///
+    /// Code: `Annn`
+    ///
+    /// The value of register `I` is set to `value`.
     fn ld_i(&mut self, value: u16) {
         assert!((value & 0xF000) == 0);
         self.registers.i = value;
