@@ -159,6 +159,14 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
+    /// Set `Vx` = `Vx` AND `Vy`.
+    ///
+    /// Code: `8xy2`
+    ///
+    /// Performs a bitwise AND on the values of `Vx` and `Vy`, then stores the
+    /// result in `Vx`. A bitwise AND compares the corrseponding bits from two
+    /// values, and if both bits are 1, then the same bit in the result is also
+    /// 1. Otherwise, it is 0.
     fn and(&mut self, vx: u8, vy: u8) {
         self.registers.v[vx as usize] &= self.registers.v[vy as usize];
         self.registers.program_counter += 1;
