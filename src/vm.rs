@@ -274,6 +274,13 @@ impl VM {
         self.registers.program_counter = addr + (self.registers.v[0] as u16);
     }
 
+    /// Set `Vx` = random byte AND `mask`.
+    ///
+    /// Code: `Cxkk`
+    ///
+    /// The interpreter generates a random number from 0 to 255, which is then
+    /// ANDed with the value `mask`. The results are stored in `Vx`. See
+    /// instruction `8xy2` for more information on AND.
     fn rnd(&mut self, vx: u8, mask: u8) {
         let value = self.rng.gen::<u8>() & mask;
         self.registers.v[vx as usize] = value;
