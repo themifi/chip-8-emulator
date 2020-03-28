@@ -66,7 +66,7 @@ impl VM {
         }
     }
 
-    fn sev(&mut self, vx: u8, vy: u8) {
+    fn se_v(&mut self, vx: u8, vy: u8) {
         if self.registers.v[vx as usize] == self.registers.v[vy as usize] {
             self.registers.program_counter += 2;
         } else {
@@ -105,7 +105,7 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn add(&mut self, vx: u8, vy: u8) {
+    fn add_vx_vy(&mut self, vx: u8, vy: u8) {
         let (result, is_overflow) = self.registers.v[vx as usize].overflowing_add(self.registers.v[vy as usize]);
         self.registers.v[vx as usize] = result;
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
@@ -138,7 +138,7 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn ldi(&mut self, value: u16) {
+    fn ld_i(&mut self, value: u16) {
         assert!((value & 0xF000) == 0);
         self.registers.i = value;
         self.registers.program_counter += 1;
@@ -206,7 +206,7 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn ld_i(&mut self, x: u8) {
+    fn ld_i_vx(&mut self, x: u8) {
         let registers = &self.registers.v[0..=x as usize];
         let start_memory_pos = self.registers.i as usize;
         let finis_memory_pos = start_memory_pos + registers.len();
@@ -217,7 +217,7 @@ impl VM {
         self.registers.program_counter += 1;
     }
 
-    fn ld_v(&mut self, x: u8) {
+    fn ld_vx_i(&mut self, x: u8) {
         let registers = &mut self.registers.v[0..=x as usize];
         let start_memory_pos = self.registers.i as usize;
         let finis_memory_pos = start_memory_pos + registers.len();
@@ -388,13 +388,13 @@ mod tests {
     }
 
     #[test]
-    fn test_sev_equal() {
+    fn test_se_v_equal() {
         let mut vm = VM::new();
         vm.registers.v[1] = 4;
         vm.registers.v[2] = 4;
         vm.registers.program_counter = 5;
 
-        vm.sev(1, 2);
+        vm.se_v(1, 2);
 
         assert_eq!(vm.registers.v[1], 4);
         assert_eq!(vm.registers.v[2], 4);
@@ -402,13 +402,13 @@ mod tests {
     }
 
     #[test]
-    fn test_sev_not_equal() {
+    fn test_se_v_not_equal() {
         let mut vm = VM::new();
         vm.registers.v[1] = 4;
         vm.registers.v[2] = 5;
         vm.registers.program_counter = 5;
 
-        vm.sev(1, 2);
+        vm.se_v(1, 2);
 
         assert_eq!(vm.registers.v[1], 4);
         assert_eq!(vm.registers.v[2], 5);
@@ -417,16 +417,16 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_sev_invalid_first() {
+    fn test_se_v_invalid_first() {
         let mut vm = VM::new();
-        vm.sev(16, 1);
+        vm.se_v(16, 1);
     }
 
     #[test]
     #[should_panic]
-    fn test_sev_invalid_second() {
+    fn test_se_v_invalid_second() {
         let mut vm = VM::new();
-        vm.sev(0, 16);
+        vm.se_v(0, 16);
     }
 
     #[test]
@@ -585,14 +585,14 @@ mod tests {
     }
 
     #[test]
-    fn test_add_with_overflow() {
+    fn test_add_vx_vy_with_overflow() {
         let mut vm = VM::new();
         vm.registers.v[1] = 200;
         vm.registers.v[2] = 100;
         vm.registers.v[0xF] = 4;
         vm.registers.program_counter = 5;
 
-        vm.add(1, 2);
+        vm.add_vx_vy(1, 2);
 
         assert_eq!(vm.registers.v[1], 44);
         assert_eq!(vm.registers.v[2], 100);
@@ -601,14 +601,14 @@ mod tests {
     }
 
     #[test]
-    fn test_add_without_overflow() {
+    fn test_add_vx_vy_without_overflow() {
         let mut vm = VM::new();
         vm.registers.v[1] = 50;
         vm.registers.v[2] = 100;
         vm.registers.v[0xF] = 4;
         vm.registers.program_counter = 5;
 
-        vm.add(1, 2);
+        vm.add_vx_vy(1, 2);
 
         assert_eq!(vm.registers.v[1], 150);
         assert_eq!(vm.registers.v[2], 100);
@@ -618,16 +618,16 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_add_invalid_first() {
+    fn test_add_vx_vy_invalid_first() {
         let mut vm = VM::new();
-        vm.add(16, 1);
+        vm.add_vx_vy(16, 1);
     }
 
     #[test]
     #[should_panic]
-    fn test_add_invalid_second() {
+    fn test_add_vx_vy_invalid_second() {
         let mut vm = VM::new();
-        vm.add(0, 16);
+        vm.add_vx_vy(0, 16);
     }
 
     #[test]
@@ -793,12 +793,12 @@ mod tests {
     }
 
     #[test]
-    fn test_ldi() {
+    fn test_ld_i() {
         let mut vm = VM::new();
         vm.registers.i = 5;
         vm.registers.program_counter = 5;
 
-        vm.ldi(0x0111);
+        vm.ld_i(0x0111);
 
         assert_eq!(vm.registers.i, 0x0111);
         assert_eq!(vm.registers.program_counter, 6);
@@ -806,9 +806,9 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_ldi_invalid() {
+    fn test_ld_i_invalid() {
         let mut vm = VM::new();
-        vm.ldi(0xF000);
+        vm.ld_i(0xF000);
     }
 
     #[test]
@@ -1004,28 +1004,28 @@ mod tests {
     }
 
     #[test]
-    fn test_ld_i() {
+    fn test_ld_i_vx() {
         let mut vm = VM::new();
         vm.registers.program_counter = 5;
         vm.registers.i = 0x100;
         let registers = (0x0..=0xF).collect::<Vec<u8>>();
         vm.registers.v.copy_from_slice(&registers);
 
-        vm.ld_i(0xF);
+        vm.ld_i_vx(0xF);
 
         assert_eq!(vm.memory.get_slice(0x100, 0x110), registers.as_slice());
         assert_eq!(vm.registers.program_counter, 6);
     }
 
     #[test]
-    fn test_ld_v() {
+    fn test_ld_vx_i() {
         let mut vm = VM::new();
         vm.registers.program_counter = 5;
         vm.registers.i = 0x100;
         let memory = (0x0..=0xF).collect::<Vec<u8>>();
         vm.memory.get_slice_mut(0x100, 0x110).copy_from_slice(&memory);
 
-        vm.ld_v(0xF);
+        vm.ld_vx_i(0xF);
 
         assert_eq!(vm.registers.v, memory.as_slice());
         assert_eq!(vm.registers.program_counter, 6);
