@@ -19,14 +19,7 @@ pub struct VM {
 
 impl VM {
     pub fn new() -> VM {
-        Self {
-            memory: Memory::new_with_initial_sprites(),
-            registers: Registers::new(),
-            stack: Stack::new(),
-            graphics: Graphics::new(),
-            input: Input::new(),
-            rng: SmallRng::seed_from_u64(0),
-        }
+        Default::default()
     }
 
     /// Return from a subroutine.
@@ -451,6 +444,19 @@ impl VM {
         registers.copy_from_slice(memory);
 
         self.registers.program_counter += 1;
+    }
+}
+
+impl Default for VM {
+    fn default() -> Self {
+        Self {
+            memory: Memory::new_with_initial_sprites(),
+            registers: Registers::new(),
+            stack: Stack::new(),
+            graphics: Graphics::new(),
+            input: Input::new(),
+            rng: SmallRng::seed_from_u64(0),
+        }
     }
 }
 
