@@ -1,5 +1,6 @@
 const STACK_SIZE: usize = 16;
 
+#[derive(Default)]
 pub struct Stack {
     pub stack: [u16; STACK_SIZE],
     pub pointer: u8,
@@ -7,10 +8,7 @@ pub struct Stack {
 
 impl Stack {
     pub fn new() -> Self {
-        Self {
-            stack: [0; STACK_SIZE],
-            pointer: 0,
-        }
+        Default::default()
     }
 
     pub fn push(&mut self, value: u16) {
