@@ -474,6 +474,7 @@ impl VM {
     /// Execute instruction `inst`
     ///
     /// `inst` integer should be in navite endian order.
+    #[allow(clippy::cognitive_complexity)]
     pub fn exec_instruction(&mut self, inst: u16) {
         match inst {
             0x00E0 => self.cls(),
