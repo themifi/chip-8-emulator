@@ -42,7 +42,10 @@ mod tests {
         let mut graphics = Graphics::new();
         let sprite = [0x20, 0x60, 0x20, 0x20, 0x70];
         let is_collision = graphics.draw_sprite(8, 2, &sprite);
-        assert_eq!(graphics.display[0..9], [0, 0, 0x2000, 0x6000, 0x2000, 0x2000, 0x7000, 0, 0]);
+        assert_eq!(
+            graphics.display[0..9],
+            [0, 0, 0x2000, 0x6000, 0x2000, 0x2000, 0x7000, 0, 0]
+        );
         assert!(!is_collision);
     }
 

@@ -18,11 +18,11 @@
 //! Chip-48, a modification of Chip-48 which allowed higher resolution
 //! graphics, as well as other graphical enhancements.
 
+pub mod graphics;
+pub mod input;
 pub mod memory;
 pub mod registers;
-pub mod graphics;
 pub mod stack;
-pub mod input;
 pub mod vm;
 
 pub use vm::VM;

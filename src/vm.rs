@@ -1,12 +1,12 @@
-use rand::{Rng, SeedableRng};
-use rand::rngs::SmallRng;
 use super::{
+    graphics::Graphics,
+    input::Input,
     memory::{Memory, SPRITE_SIZE, SPRITE_START_LOCATION},
     registers::Registers,
-    graphics::Graphics,
     stack::Stack,
-    input::Input,
 };
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 
 pub struct VM {
     memory: Memory,
@@ -186,8 +186,8 @@ impl VM {
     /// than 8 bits (i.e., > 255,) `VF` is set to 1, otherwise 0. Only the
     /// lowest 8 bits of the result are kept, and stored in `Vx`.
     fn add_vx_vy(&mut self, x: u8, y: u8) {
-        let (result, is_overflow) = self.registers.v[x as usize]
-            .overflowing_add(self.registers.v[y as usize]);
+        let (result, is_overflow) =
+            self.registers.v[x as usize].overflowing_add(self.registers.v[y as usize]);
         self.registers.v[x as usize] = result;
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
         self.registers.program_counter += 1;
@@ -200,8 +200,8 @@ impl VM {
     /// If `Vx` > `Vy`, then `VF` is set to 1, otherwise 0. Then `Vy` is
     /// subtracted from `Vx`, and the results stored in `Vx`.
     fn sub(&mut self, x: u8, y: u8) {
-        let (result, is_overflow) = self.registers.v[x as usize]
-            .overflowing_sub(self.registers.v[y as usize]);
+        let (result, is_overflow) =
+            self.registers.v[x as usize].overflowing_sub(self.registers.v[y as usize]);
         self.registers.v[x as usize] = result;
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 }; // FIXME
         self.registers.program_counter += 1;
@@ -226,8 +226,8 @@ impl VM {
     /// If `Vy` > `Vx`, then `VF` is set to 1, otherwise 0. Then `Vx` is
     /// subtracted from `Vy`, and the results stored in `Vx`.
     fn subn(&mut self, x: u8, y: u8) {
-        let (result, is_overflow) = self.registers.v[y as usize]
-            .overflowing_sub(self.registers.v[x as usize]);
+        let (result, is_overflow) =
+            self.registers.v[y as usize].overflowing_sub(self.registers.v[x as usize]);
         self.registers.v[x as usize] = result;
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 }; // FIXME
         self.registers.program_counter += 1;
@@ -445,9 +445,9 @@ impl VM {
     /// memory, starting at the address in `I`.
     fn ld_i_vx(&mut self, x: u8) {
         let registers = &self.registers.v[0..=x as usize];
-        let start_memory_pos = self.registers.i as usize;
-        let finis_memory_pos = start_memory_pos + registers.len();
-        let memory = self.memory.get_slice_mut(start_memory_pos, finis_memory_pos);
+        let start = self.registers.i as usize;
+        let finish = start + registers.len();
+        let memory = self.memory.get_slice_mut(start, finish);
 
         memory.copy_from_slice(registers);
 
@@ -482,147 +482,147 @@ impl VM {
             inst if inst & 0xF000 == 0x1000 => {
                 let addr = inst & 0x0FFF;
                 self.jp(addr);
-            },
+            }
             inst if inst & 0xF000 == 0x2000 => {
                 let addr = inst & 0x0FFF;
                 self.call(addr);
-            },
+            }
             inst if inst & 0xF000 == 0x3000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let value = (inst & 0x00FF) as u8;
                 self.se(x, value);
-            },
+            }
             inst if inst & 0xF000 == 0x4000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let value = (inst & 0x00FF) as u8;
                 self.sne(x, value);
-            },
+            }
             inst if inst & 0xF00F == 0x5000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.se_v(x, y);
-            },
+            }
             inst if inst & 0xF000 == 0x6000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let value = (inst & 0x00FF) as u8;
                 self.ld_vx(x, value);
-            },
+            }
             inst if inst & 0xF000 == 0x7000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let value = (inst & 0x00FF) as u8;
                 self.add_vx(x, value);
-            },
+            }
             inst if inst & 0xF00F == 0x8000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.ld_vx_vy(x, y);
-            },
+            }
             inst if inst & 0xF00F == 0x8001 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.or(x, y);
-            },
+            }
             inst if inst & 0xF00F == 0x8002 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.and(x, y);
-            },
+            }
             inst if inst & 0xF00F == 0x8003 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.xor(x, y);
-            },
+            }
             inst if inst & 0xF00F == 0x8004 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.add_vx_vy(x, y);
-            },
+            }
             inst if inst & 0xF00F == 0x8005 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.sub(x, y);
-            },
+            }
             inst if inst & 0xF00F == 0x8006 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.shr(x);
-            },
+            }
             inst if inst & 0xF00F == 0x8007 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.subn(x, y);
-            },
+            }
             inst if inst & 0xF00F == 0x800E => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.shl(x);
-            },
+            }
             inst if inst & 0xF00F == 0x9000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.sne_vx_vy(x, y);
-            },
+            }
             inst if inst & 0xF000 == 0xA000 => {
                 let value = inst & 0x0FFF;
                 self.ld_i(value);
-            },
+            }
             inst if inst & 0xF000 == 0xB000 => {
                 let addr = inst & 0x0FFF;
                 self.jp_v0(addr);
-            },
+            }
             inst if inst & 0xF000 == 0xC000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let mask = (inst & 0x00FF) as u8;
                 self.rnd(x, mask);
-            },
+            }
             inst if inst & 0xF000 == 0xD000 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 let n = (inst & 0x000F) as u8;
                 self.drw(x, y, n);
-            },
+            }
             inst if inst & 0xF0FF == 0xE09E => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.skp(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xE0A1 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.sknp(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF007 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_vx_dt(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF00A => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_vx_k(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF015 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_dt_vx(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF018 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_st(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF01E => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.add_i(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF029 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_f(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF033 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_b(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF055 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_i_vx(x);
-            },
+            }
             inst if inst & 0xF0FF == 0xF065 => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_vx_i(x);
-            },
+            }
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -643,9 +643,9 @@ impl Default for VM {
 
 #[cfg(test)]
 mod tests {
+    use super::super::graphics::DISPLAY_ROWS;
     use super::*;
     use std::u64;
-    use super::super::graphics::DISPLAY_ROWS;
 
     #[test]
     fn test_jp() {
@@ -1291,7 +1291,9 @@ mod tests {
         vm.registers.i = location as u16;
         vm.registers.v[0xF] = 2;
         let sprite = [0x20, 0x60, 0x20, 0x20, 0x70];
-        vm.memory.get_slice_mut(location, location + sprite.len()).copy_from_slice(&sprite);
+        vm.memory
+            .get_slice_mut(location, location + sprite.len())
+            .copy_from_slice(&sprite);
 
         vm.drw(4, 4, 5);
 
@@ -1309,7 +1311,9 @@ mod tests {
         vm.registers.i = location as u16;
         vm.registers.v[0xF] = 2;
         let sprite = [0xFF];
-        vm.memory.get_slice_mut(location, location + sprite.len()).copy_from_slice(&sprite);
+        vm.memory
+            .get_slice_mut(location, location + sprite.len())
+            .copy_from_slice(&sprite);
         vm.graphics.display[0] = 0x1;
 
         vm.drw(0, 0, 1);
@@ -1458,7 +1462,10 @@ mod tests {
 
         assert_eq!(vm.registers.i, 25);
         let sprite_five = [0xF0, 0x80, 0xF0, 0x10, 0xF0];
-        let sprite = vm.memory.get_slice(vm.registers.i as usize, vm.registers.i as usize + SPRITE_SIZE);
+        let sprite = vm.memory.get_slice(
+            vm.registers.i as usize,
+            vm.registers.i as usize + SPRITE_SIZE,
+        );
         assert_eq!(sprite, &sprite_five);
         assert_eq!(vm.registers.program_counter, 6);
     }
@@ -1497,7 +1504,9 @@ mod tests {
         vm.registers.program_counter = 5;
         vm.registers.i = 0x100;
         let memory = (0x0..=0xF).collect::<Vec<u8>>();
-        vm.memory.get_slice_mut(0x100, 0x110).copy_from_slice(&memory);
+        vm.memory
+            .get_slice_mut(0x100, 0x110)
+            .copy_from_slice(&memory);
 
         vm.ld_vx_i(0xF);
 
@@ -1768,7 +1777,8 @@ mod tests {
         vm.registers.i = location as u16;
         vm.registers.v[0xF] = 2;
         let sprite = [0x20, 0x60, 0x20, 0x20, 0x70];
-        vm.memory.get_slice_mut(location, location + sprite.len())
+        vm.memory
+            .get_slice_mut(location, location + sprite.len())
             .copy_from_slice(&sprite);
 
         vm.exec_instruction(0xD445);
@@ -1896,7 +1906,9 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.i = 0x100;
         let memory = (0x0..=0xF).collect::<Vec<u8>>();
-        vm.memory.get_slice_mut(0x100, 0x110).copy_from_slice(&memory);
+        vm.memory
+            .get_slice_mut(0x100, 0x110)
+            .copy_from_slice(&memory);
 
         vm.exec_instruction(0xFF65);
 
