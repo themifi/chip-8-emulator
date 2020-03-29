@@ -453,6 +453,10 @@ impl VM {
         match inst {
             0x00E0 => self.cls(),
             0x00EE => self.ret(),
+            inst if inst & 0xF000 == 0x1000 => {
+                let addr = inst & 0x0FFF;
+                self.jp(addr);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1307,5 +1311,15 @@ mod tests {
         vm.exec_instruction(0x00EE);
 
         assert_eq!(vm.stack.pointer, 0);
+    }
+
+    #[test]
+    fn test_exec_instruction_jp() {
+        let mut vm = VM::new();
+        assert_eq!(vm.registers.program_counter, 0x0);
+
+        vm.exec_instruction(0x1ABC);
+
+        assert_eq!(vm.registers.program_counter, 0x0ABC);
     }
 }
