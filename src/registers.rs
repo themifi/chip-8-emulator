@@ -1,5 +1,6 @@
 pub const V_REGISTERS_SIZE: usize = 16;
 
+#[derive(Default)]
 pub struct Registers {
     pub v: [u8; V_REGISTERS_SIZE],
     pub i: u16,
@@ -10,12 +11,6 @@ pub struct Registers {
 
 impl Registers {
     pub fn new() -> Self {
-        Self {
-            v: [0; V_REGISTERS_SIZE],
-            i: 0,
-            delay_timer: 0,
-            sound_timer: 0,
-            program_counter: 0,
-        }
+        Default::default()
     }
 }
