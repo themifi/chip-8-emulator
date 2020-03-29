@@ -481,6 +481,11 @@ impl VM {
                 let value = (inst & 0x00FF) as u8;
                 self.ld_vx(x, value);
             },
+            inst if inst & 0xF000 == 0x7000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let value = (inst & 0x00FF) as u8;
+                self.add_vx(x, value);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1401,5 +1406,15 @@ mod tests {
         vm.exec_instruction(0x6AFF);
 
         assert_eq!(vm.registers.v[0xA], 0xFF);
+    }
+
+    #[test]
+    fn test_exec_instruction_add_vx() {
+        let mut vm = VM::new();
+        vm.registers.v[0xA] = 0xBC;
+
+        vm.exec_instruction(0x7A11);
+
+        assert_eq!(vm.registers.v[0xA], 0xCD);
     }
 }
