@@ -160,8 +160,8 @@ impl VM {
     /// result in `Vx`. A bitwise AND compares the corrseponding bits from two
     /// values, and if both bits are 1, then the same bit in the result is also
     /// 1. Otherwise, it is 0.
-    fn and(&mut self, vx: u8, vy: u8) {
-        self.registers.v[vx as usize] &= self.registers.v[vy as usize];
+    fn and(&mut self, x: u8, y: u8) {
+        self.registers.v[x as usize] &= self.registers.v[y as usize];
         self.registers.program_counter += 1;
     }
 
@@ -495,6 +495,11 @@ impl VM {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.or(x, y);
+            },
+            inst if inst & 0xF00F == 0x8002 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.and(x, y);
             },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
@@ -1449,6 +1454,18 @@ mod tests {
         vm.exec_instruction(0x8AB1);
 
         assert_eq!(vm.registers.v[0xA], 0b1111_1100);
+        assert_eq!(vm.registers.v[0xB], 0b0011_1100);
+    }
+
+    #[test]
+    fn test_exec_instruction_and_vx_vy() {
+        let mut vm = VM::new();
+        vm.registers.v[0xA] = 0b1100_1100;
+        vm.registers.v[0xB] = 0b0011_1100;
+
+        vm.exec_instruction(0x8AB2);
+
+        assert_eq!(vm.registers.v[0xA], 0b0000_1100);
         assert_eq!(vm.registers.v[0xB], 0b0011_1100);
     }
 }
