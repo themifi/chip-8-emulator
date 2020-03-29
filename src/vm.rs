@@ -520,6 +520,11 @@ impl VM {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.shr(x);
             },
+            inst if inst & 0xF00F == 0x8007 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.subn(x, y);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1532,5 +1537,17 @@ mod tests {
         vm.exec_instruction(0x8AB6);
 
         assert_eq!(vm.registers.v[0xA], 0b0010_0110);
+    }
+
+    #[test]
+    fn test_exec_instruction_subn() {
+        let mut vm = VM::new();
+        vm.registers.v[0xA] = 0b1100_0000;
+        vm.registers.v[0xB] = 0b1100_1100;
+
+        vm.exec_instruction(0x8AB7);
+
+        assert_eq!(vm.registers.v[0xA], 0b0000_1100);
+        assert_eq!(vm.registers.v[0xB], 0b1100_1100);
     }
 }
