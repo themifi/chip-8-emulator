@@ -1,5 +1,6 @@
 # CHIP-8 emulator
-![Continuous integration](https://github.com/opilar/chip-8-emulator/workflows/Continuous%20integration/badge.svg)
+![CI](https://github.com/opilar/chip-8-emulator/workflows/Continuous%20integration/badge.svg)
+[![codecov](https://codecov.io/gh/opilar/chip-8-emulator/branch/master/graph/badge.svg)](https://codecov.io/gh/opilar/chip-8-emulator)
 
 My CHIP-8 emulator in [Rust](https://github.com/rust-lang/rust).
 
