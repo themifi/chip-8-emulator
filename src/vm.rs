@@ -582,6 +582,10 @@ impl VM {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.skp(x);
             },
+            inst if inst & 0xF0FF == 0xE0A1 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.sknp(x);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1718,6 +1722,18 @@ mod tests {
         vm.registers.program_counter = 5;
 
         vm.exec_instruction(0xE29E);
+
+        assert_eq!(vm.registers.program_counter, 7);
+    }
+
+    #[test]
+    fn test_exec_instruction_sknp() {
+        let mut vm = VM::new();
+        vm.input = Input::new();
+        vm.registers.v[0x2] = 0x5;
+        vm.registers.program_counter = 5;
+
+        vm.exec_instruction(0xE2A1);
 
         assert_eq!(vm.registers.program_counter, 7);
     }
