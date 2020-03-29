@@ -1,15 +1,14 @@
 pub const DISPLAY_ROWS: usize = 32;
 const DISPLAY_COLS: usize = 64;
 
+#[derive(Default)]
 pub struct Graphics {
     pub display: [u64; DISPLAY_ROWS],
 }
 
 impl Graphics {
     pub fn new() -> Self {
-        Self {
-            display: [0; DISPLAY_ROWS],
-        }
+        Default::default()
     }
 
     pub fn clear(&mut self) {
