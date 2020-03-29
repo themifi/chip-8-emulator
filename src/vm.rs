@@ -239,11 +239,25 @@ impl VM {
     ///
     /// If the most-significant bit of `Vx` is 1, then `VF` is set to 1,
     /// otherwise to 0. Then `Vx` is multiplied by 2.
-    fn shl(&mut self, vx: u8) {
-        let significant_bit = self.registers.v[vx as usize] >= 0b1000_0000;
+    fn shl(&mut self, x: u8) {
+        let significant_bit = self.registers.v[x as usize] >= 0b1000_0000;
         self.registers.v[0xF] = if significant_bit { 1 } else { 0 };
-        self.registers.v[vx as usize] <<= 1;
+        self.registers.v[x as usize] <<= 1;
         self.registers.program_counter += 1;
+    }
+
+    /// Skip next instruction if `Vx` != `Vy`.
+    ///
+    /// Code: `9xy0`
+    ///
+    /// The values of `Vx` and `Vy` are compared, and if they are not equal,
+    /// the program counter is increased by 2.
+    fn sne_vx_vy(&mut self, x: u8, y: u8) {
+        if self.registers.v[x as usize] != self.registers.v[y as usize] {
+            self.registers.program_counter += 2;
+        } else {
+        self.registers.program_counter += 1;
+    }
     }
 
     /// Set `I` = `value`.
@@ -1101,6 +1115,30 @@ mod tests {
     fn test_shl_invalid() {
         let mut vm = VM::new();
         vm.shr(16);
+    }
+
+    #[test]
+    fn test_sne_vx_vy_equal() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        vm.registers.v[0x1] = 5;
+        vm.registers.v[0x2] = 5;
+
+        vm.sne_vx_vy(0x1, 0x2);
+
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_sne_vx_vy_unequal() {
+        let mut vm = VM::new();
+        vm.registers.program_counter = 5;
+        vm.registers.v[0x1] = 5;
+        vm.registers.v[0x1] = 6;
+
+        vm.sne_vx_vy(0x1, 0x2);
+
+        assert_eq!(vm.registers.program_counter, 7);
     }
 
     #[test]
