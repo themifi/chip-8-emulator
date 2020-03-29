@@ -548,6 +548,10 @@ impl VM {
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.sne_vx_vy(x, y);
             },
+            inst if inst & 0xF000 == 0xA000 => {
+                let value = inst & 0x0FFF;
+                self.ld_i(value);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1618,5 +1622,15 @@ mod tests {
         vm.exec_instruction(0x9AB0);
 
         assert_eq!(vm.registers.program_counter, 7);
+    }
+
+    #[test]
+    fn test_exec_instruction_ld_i() {
+        let mut vm = VM::new();
+        vm.registers.i = 0x1;
+
+        vm.exec_instruction(0xA111);
+
+        assert_eq!(vm.registers.i, 0x0111);
     }
 }
