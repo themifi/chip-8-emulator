@@ -501,6 +501,11 @@ impl VM {
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.and(x, y);
             },
+            inst if inst & 0xF00F == 0x8003 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.xor(x, y);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1466,6 +1471,18 @@ mod tests {
         vm.exec_instruction(0x8AB2);
 
         assert_eq!(vm.registers.v[0xA], 0b0000_1100);
+        assert_eq!(vm.registers.v[0xB], 0b0011_1100);
+    }
+
+    #[test]
+    fn test_exec_instruction_xor() {
+        let mut vm = VM::new();
+        vm.registers.v[0xA] = 0b1100_1100;
+        vm.registers.v[0xB] = 0b0011_1100;
+
+        vm.exec_instruction(0x8AB3);
+
+        assert_eq!(vm.registers.v[0xA], 0b1111_0000);
         assert_eq!(vm.registers.v[0xB], 0b0011_1100);
     }
 }
