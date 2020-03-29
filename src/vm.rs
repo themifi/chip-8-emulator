@@ -447,9 +447,12 @@ impl VM {
     }
 
     /// Execute instruction `inst`
-    fn exec_instruction(&mut self, inst: [u8; 2]) {
-        match (inst[0], inst[1]) {
-            _ => panic!("unexpected instruction: {:#04x} {:#04x}", inst[0], inst[1])
+    ///
+    /// `inst` integer should be in navite endian order.
+    pub fn exec_instruction(&mut self, inst: u16) {
+        match inst {
+            0x00E0 => self.cls(),
+            _ => panic!("unexpected instruction: {:#04X}", inst),
         }
     }
 }
@@ -1278,8 +1281,19 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_instruction() {
+    #[should_panic]
+    fn test_exec_instruction_invalid() {
         let mut vm = VM::new();
-        vm.exec_instruction([0x00, 0x00]);
+        vm.exec_instruction(0xFFFF);
+    }
+
+    #[test]
+    fn test_exec_instruction_cls() {
+        let mut vm = VM::new();
+        vm.graphics.display[0x1] = 0xFF;
+
+        vm.exec_instruction(0x00E0);
+
+        assert!(vm.graphics.display.iter().all(|&x| x == 0u64));
     }
 }
