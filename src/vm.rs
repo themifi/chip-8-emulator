@@ -256,8 +256,8 @@ impl VM {
         if self.registers.v[x as usize] != self.registers.v[y as usize] {
             self.registers.program_counter += 2;
         } else {
-        self.registers.program_counter += 1;
-    }
+            self.registers.program_counter += 1;
+        }
     }
 
     /// Set `I` = `value`.
@@ -542,6 +542,11 @@ impl VM {
             inst if inst & 0xF00F == 0x800E => {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.shl(x);
+            },
+            inst if inst & 0xF00F == 0x9000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.sne_vx_vy(x, y);
             },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
@@ -1601,5 +1606,17 @@ mod tests {
         vm.exec_instruction(0x8ABE);
 
         assert_eq!(vm.registers.v[0xA], 0b1001_1000);
+    }
+
+    #[test]
+    fn test_exec_instruction_sne_vx_vy() {
+        let mut vm = VM::new();
+        vm.registers.v[0xA] = 0x1;
+        vm.registers.v[0xB] = 0x2;
+        vm.registers.program_counter = 5;
+
+        vm.exec_instruction(0x9AB0);
+
+        assert_eq!(vm.registers.program_counter, 7);
     }
 }
