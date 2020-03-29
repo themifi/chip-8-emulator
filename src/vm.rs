@@ -325,8 +325,12 @@ impl VM {
     /// Checks the keyboard, and if the key corresponding to the value of `Vx`
     /// is currently in the down position, program counter is increased by 2.
     fn skp(&mut self, x: u8) {
-        let increment_value = if self.input.is_key_pressed(x) { 2 } else { 1 };
-        self.registers.program_counter += increment_value;
+        let key = self.registers.v[x as usize];
+        if self.input.get_pressed_key() == Some(key) {
+            self.registers.program_counter += 2;
+        } else {
+            self.registers.program_counter += 1;
+        }
     }
 
     /// Skip next instruction if key with the value of `Vx` is not pressed.
@@ -336,7 +340,12 @@ impl VM {
     /// Checks the keyboard, and if the key corresponding to the value of `Vx`
     /// is currently in the up position, program counter is increased by 2.
     fn sknp(&mut self, x: u8) {
-        self.registers.program_counter += if self.input.is_key_pressed(x) { 1 } else { 2 };
+        let key = self.registers.v[x as usize];
+        if self.input.get_pressed_key() != Some(key) {
+            self.registers.program_counter += 2;
+        } else {
+            self.registers.program_counter += 1;
+        }
     }
 
     /// Set `Vx` = delay timer value.
@@ -366,8 +375,10 @@ impl VM {
     /// All execution stops until a key is pressed, then the value of that key
     /// is stored in `Vx`.
     fn ld_vx_k(&mut self, x: u8) {
-        // TODO: implement
-        unimplemented!();
+        if let Some(key) = self.input.get_pressed_key() {
+            self.registers.v[x as usize] = key;
+            self.registers.program_counter += 1;
+        }
     }
 
     /// Set sound timer = `Vx`.
@@ -1266,10 +1277,11 @@ mod tests {
     #[test]
     fn test_skp_key_pressed() {
         let mut vm = VM::new();
-        vm.input = Input::new_with_state(0b100);
+        vm.input = Input::new_with_key_pressed(0x5);
+        vm.registers.v[0x2] = 0x5;
         vm.registers.program_counter = 5;
 
-        vm.skp(2);
+        vm.skp(0x2);
 
         assert_eq!(vm.registers.program_counter, 7);
     }
@@ -1277,10 +1289,11 @@ mod tests {
     #[test]
     fn test_skp_key_unpressed() {
         let mut vm = VM::new();
-        vm.input = Input::new_with_state(0b100);
+        vm.input = Input::new_with_key_pressed(0x3);
+        vm.registers.v[0x2] = 0x5;
         vm.registers.program_counter = 5;
 
-        vm.skp(4);
+        vm.skp(0x2);
 
         assert_eq!(vm.registers.program_counter, 6);
     }
@@ -1288,10 +1301,11 @@ mod tests {
     #[test]
     fn test_sknp_key_pressed() {
         let mut vm = VM::new();
-        vm.input = Input::new_with_state(0b100);
+        vm.input = Input::new_with_key_pressed(0x5);
+        vm.registers.v[0x2] = 0x5;
         vm.registers.program_counter = 5;
 
-        vm.sknp(2);
+        vm.sknp(0x2);
 
         assert_eq!(vm.registers.program_counter, 6);
     }
@@ -1299,10 +1313,11 @@ mod tests {
     #[test]
     fn test_sknp_key_unpressed() {
         let mut vm = VM::new();
-        vm.input = Input::new_with_state(0b100);
+        vm.input = Input::new_with_key_pressed(0x4);
+        vm.registers.v[0x2] = 0x5;
         vm.registers.program_counter = 5;
 
-        vm.sknp(4);
+        vm.sknp(0x2);
 
         assert_eq!(vm.registers.program_counter, 7);
     }
