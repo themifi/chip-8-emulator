@@ -1,14 +1,13 @@
 const KEYS: u8 = 16;
 
+#[derive(Default)]
 pub struct Input {
     keypad: u16,
 }
 
 impl Input {
     pub fn new() -> Self {
-        Self {
-            keypad: 0,
-        }
+        Default::default()
     }
 
     pub fn new_with_state(keypad: u16) -> Self {
