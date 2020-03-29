@@ -27,16 +27,15 @@ pub struct Memory {
 }
 
 impl Memory {
-    fn new() -> Self {
-        Self {
-            memory: [0; MEMORY_SIZE],
-        }
-    }
-
     pub fn new_with_initial_sprites() -> Self {
-        let mut memory = Self::new();
-        memory.memory[SPRITE_START_LOCATION..SPRITE_START_LOCATION + INITIAL_SPRITES.len()].copy_from_slice(&INITIAL_SPRITES);
-        memory
+        let mut memory = [0; MEMORY_SIZE];
+
+        let sprites_chunk = &mut memory[SPRITE_START_LOCATION..SPRITE_START_LOCATION + INITIAL_SPRITES.len()];
+        sprites_chunk.copy_from_slice(&INITIAL_SPRITES);
+
+        Memory {
+            memory,
+        }
     }
 
     pub fn get_slice(&self, start: usize, finish: usize) -> &[u8] {
@@ -55,12 +54,6 @@ impl Memory {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_initial_memory_empty() {
-        let memory = Memory::new();
-        assert!(memory.memory.iter().all(|&byte| byte == 0));
-    }
 
     #[test]
     fn test_initial_memory_with_initial_sprites() {
