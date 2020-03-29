@@ -213,9 +213,9 @@ impl VM {
     ///
     /// If the least-significant bit of `Vx` is 1, then `VF` is set to 1,
     /// otherwise 0. Then `Vx` is divided by 2.
-    fn shr(&mut self, vx: u8) {
-        self.registers.v[0xF] = self.registers.v[vx as usize] % 2;
-        self.registers.v[vx as usize] >>= 1;
+    fn shr(&mut self, x: u8) {
+        self.registers.v[0xF] = self.registers.v[x as usize] % 2;
+        self.registers.v[x as usize] >>= 1;
         self.registers.program_counter += 1;
     }
 
@@ -515,6 +515,10 @@ impl VM {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 let y = ((inst & 0x00F0) >> 4) as u8;
                 self.sub(x, y);
+            },
+            inst if inst & 0xF00F == 0x8006 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.shr(x);
             },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
@@ -1518,5 +1522,15 @@ mod tests {
 
         assert_eq!(vm.registers.v[0xA], 0b1010_1000);
         assert_eq!(vm.registers.v[0xB], 0b0010_0100);
+    }
+
+    #[test]
+    fn test_exec_instruction_shr() {
+        let mut vm = VM::new();
+        vm.registers.v[0xA] = 0b0100_1100;
+
+        vm.exec_instruction(0x8AB6);
+
+        assert_eq!(vm.registers.v[0xA], 0b0010_0110);
     }
 }
