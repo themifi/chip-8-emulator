@@ -561,6 +561,12 @@ impl VM {
                 let mask = (inst & 0x00FF) as u8;
                 self.rnd(x, mask);
             },
+            inst if inst & 0xF000 == 0xD000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                let n = (inst & 0x000F) as u8;
+                self.drw(x, y, n);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1667,5 +1673,21 @@ mod tests {
         vm.exec_instruction(0xC10F);
 
         assert_eq!(vm.registers.v[1], 5);
+    }
+
+    #[test]
+    fn test_exec_instruction_drw() {
+        let mut vm = VM::new();
+        let location = 0x100;
+        vm.registers.i = location as u16;
+        vm.registers.v[0xF] = 2;
+        let sprite = [0x20, 0x60, 0x20, 0x20, 0x70];
+        vm.memory.get_slice_mut(location, location + sprite.len())
+            .copy_from_slice(&sprite);
+
+        vm.exec_instruction(0xD445);
+
+        let screen = [0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
+        assert_eq!(&vm.graphics.display[0..10], &screen);
     }
 }
