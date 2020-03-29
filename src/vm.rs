@@ -610,6 +610,10 @@ impl VM {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_f(x);
             },
+            inst if inst & 0xF0FF == 0xF033 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_b(x);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1852,5 +1856,17 @@ mod tests {
         vm.exec_instruction(0xF229);
 
         assert_eq!(vm.registers.i, 25);
+    }
+
+    #[test]
+    fn test_exec_instruction_ld_b() {
+        let mut vm = VM::new();
+        vm.registers.v[0x5] = 123;
+        vm.registers.i = 100;
+
+        vm.exec_instruction(0xF533);
+
+        assert_eq!(vm.memory.get_slice(100, 103), &[1, 2, 3]);
+        assert_eq!(vm.registers.i, 100);
     }
 }
