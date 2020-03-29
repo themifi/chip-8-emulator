@@ -445,6 +445,13 @@ impl VM {
 
         self.registers.program_counter += 1;
     }
+
+    /// Execute instruction `inst`
+    fn exec_instruction(&mut self, inst: [u8; 2]) {
+        match (inst[0], inst[1]) {
+            _ => panic!("unexpected instruction: {:#04x} {:#04x}", inst[0], inst[1])
+        }
+    }
 }
 
 impl Default for VM {
@@ -1268,5 +1275,11 @@ mod tests {
 
         assert_eq!(vm.registers.v, memory.as_slice());
         assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_execute_instruction() {
+        let mut vm = VM::new();
+        vm.exec_instruction([0x00, 0x00]);
     }
 }
