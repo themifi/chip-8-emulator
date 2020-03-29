@@ -452,7 +452,8 @@ impl VM {
     pub fn exec_instruction(&mut self, inst: u16) {
         match inst {
             0x00E0 => self.cls(),
-            _ => panic!("unexpected instruction: {:#04X}", inst),
+            0x00EE => self.ret(),
+            _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
 }
@@ -1295,5 +1296,16 @@ mod tests {
         vm.exec_instruction(0x00E0);
 
         assert!(vm.graphics.display.iter().all(|&x| x == 0u64));
+    }
+
+    #[test]
+    fn test_exec_instruction_ret() {
+        let mut vm = VM::new();
+        vm.stack.push(0x1);
+        assert_eq!(vm.stack.pointer, 1);
+
+        vm.exec_instruction(0x00EE);
+
+        assert_eq!(vm.stack.pointer, 0);
     }
 }
