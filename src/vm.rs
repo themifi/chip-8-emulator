@@ -590,7 +590,7 @@ impl VM {
                 let x = ((inst & 0x0F00) >> 8) as u8;
                 self.ld_vx_dt(x);
             },
-            _ => panic!("unexpected instruction: {:#06X}", inst),
+                _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
 }
@@ -1346,6 +1346,32 @@ mod tests {
         assert_eq!(vm.registers.v[0x2], value);
         assert_eq!(vm.registers.delay_timer, value);
         assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_ld_vx_k_pressed() {
+        let mut vm = VM::new();
+        vm.input = Input::new_with_key_pressed(0x5);
+        vm.registers.v[0x2] = 0x1;
+        vm.registers.program_counter = 5;
+
+        vm.ld_vx_k(0x2);
+
+        assert_eq!(vm.registers.v[0x2], 0x5);
+        assert_eq!(vm.registers.program_counter, 6);
+    }
+
+    #[test]
+    fn test_ld_vx_k_unpressed() {
+        let mut vm = VM::new();
+        vm.input = Input::new();
+        vm.registers.v[0x2] = 0x5;
+        vm.registers.program_counter = 5;
+
+        vm.ld_vx_k(0x2);
+
+        assert_eq!(vm.registers.v[0x2], 0x5);
+        assert_eq!(vm.registers.program_counter, 5);
     }
 
     #[test]
