@@ -578,6 +578,10 @@ impl VM {
                 let n = (inst & 0x000F) as u8;
                 self.drw(x, y, n);
             },
+            inst if inst & 0xF0FF == 0xE09E => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.skp(x);
+            },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
@@ -1704,5 +1708,17 @@ mod tests {
 
         let screen = [0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
         assert_eq!(&vm.graphics.display[0..10], &screen);
+    }
+
+    #[test]
+    fn test_exec_instruction_skp() {
+        let mut vm = VM::new();
+        vm.input = Input::new_with_key_pressed(0x5);
+        vm.registers.v[0x2] = 0x5;
+        vm.registers.program_counter = 5;
+
+        vm.exec_instruction(0xE29E);
+
+        assert_eq!(vm.registers.program_counter, 7);
     }
 }
