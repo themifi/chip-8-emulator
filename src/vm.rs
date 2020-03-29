@@ -288,9 +288,9 @@ impl VM {
     /// The interpreter generates a random number from 0 to 255, which is then
     /// ANDed with the value `mask`. The results are stored in `Vx`. See
     /// instruction `8xy2` for more information on AND.
-    fn rnd(&mut self, vx: u8, mask: u8) {
+    fn rnd(&mut self, x: u8, mask: u8) {
         let value = self.rng.gen::<u8>() & mask;
-        self.registers.v[vx as usize] = value;
+        self.registers.v[x as usize] = value;
         self.registers.program_counter += 1;
     }
 
@@ -555,6 +555,11 @@ impl VM {
             inst if inst & 0xF000 == 0xB000 => {
                 let addr = inst & 0x0FFF;
                 self.jp_v0(addr);
+            },
+            inst if inst & 0xF000 == 0xC000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let mask = (inst & 0x00FF) as u8;
+                self.rnd(x, mask);
             },
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
@@ -1647,5 +1652,20 @@ mod tests {
         vm.exec_instruction(0xB100);
 
         assert_eq!(vm.registers.program_counter, 0x1AA);
+    }
+
+    #[test]
+    fn test_exec_instruction_rnd() {
+        let mut vm = VM::new();
+        vm.rng = SmallRng::seed_from_u64(0xFF);
+        vm.registers.v[1] = 0xAF;
+
+        vm.exec_instruction(0xC1FF);
+
+        assert_eq!(vm.registers.v[1], 181);
+
+        vm.exec_instruction(0xC10F);
+
+        assert_eq!(vm.registers.v[1], 5);
     }
 }
