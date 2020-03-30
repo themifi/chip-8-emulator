@@ -626,6 +626,11 @@ impl VM {
             _ => panic!("unexpected instruction: {:#06X}", inst),
         }
     }
+
+    /// Load program `program`.
+    pub fn load_program(&mut self, program: &[u8]) {
+        self.memory.load_program(program)
+    }
 }
 
 impl Default for VM {

@@ -2,6 +2,7 @@ const MEMORY_SIZE: usize = 4096;
 pub const SPRITE_SIZE: usize = 5;
 const SPRITE_NUM: usize = 16;
 pub const SPRITE_START_LOCATION: usize = 0;
+pub const PROGRAM_START_LOCATION: usize = 0x200;
 
 static INITIAL_SPRITES: [u8; SPRITE_SIZE * SPRITE_NUM] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -48,6 +49,13 @@ impl Memory {
         assert!(finish < MEMORY_SIZE);
         &mut self.memory[start..finish]
     }
+
+    pub fn load_program(&mut self, program: &[u8]) {
+        let start = PROGRAM_START_LOCATION;
+        let finish = start + program.len();
+        let program_chunk = self.get_slice_mut(start, finish);
+        program_chunk.copy_from_slice(program);
+    }
 }
 
 #[cfg(test)]
@@ -61,5 +69,19 @@ mod tests {
             assert_eq!(byte, INITIAL_SPRITES[i]);
         }
         assert!(memory.memory[80..].iter().all(|&byte| byte == 0));
+    }
+
+    #[test]
+    fn test_load_program() {
+        let mut memory = Memory::new_with_initial_sprites();
+        let test_program_code = [0x1, 0x2, 0x3];
+
+        memory.load_program(&test_program_code);
+
+        let program_in_memory = memory.get_slice(
+            PROGRAM_START_LOCATION,
+            PROGRAM_START_LOCATION + test_program_code.len(),
+        );
+        assert_eq!(program_in_memory, test_program_code);
     }
 }
