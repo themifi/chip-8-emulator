@@ -631,6 +631,18 @@ impl VM {
     pub fn load_program(&mut self, program: &[u8]) {
         self.memory.load_program(program)
     }
+
+    pub fn run_program(&mut self) -> ! {
+        loop {
+            let instruction = self.read_current_instruction();
+            self.exec_instruction(instruction);
+        }
+    }
+
+    fn read_current_instruction(&self) -> u16 {
+        self.memory
+            .read_instruction(self.registers.program_counter as usize)
+    }
 }
 
 impl Default for VM {
