@@ -61,7 +61,7 @@ impl Memory {
     }
 
     /// Fetch instruction at `addr` address.
-    pub fn read_instruction(&self, addr: usize) -> u16 {
+    pub fn fetch_instruction(&self, addr: usize) -> u16 {
         let instr_slice = &self.memory[addr..addr + INSTRUCTION_SIZE];
         let mut instr = [0, 0];
         instr[0..INSTRUCTION_SIZE].copy_from_slice(instr_slice);
@@ -97,11 +97,11 @@ mod tests {
     }
 
     #[test]
-    fn test_read_instruction() {
+    fn test_fetch_instruction() {
         let mut memory = Memory::new_with_initial_sprites();
         memory.memory[0x202..0x204].copy_from_slice(&[0x12, 0x34]);
 
-        let instr = memory.read_instruction(0x202);
+        let instr = memory.fetch_instruction(0x202);
 
         assert_eq!(instr, 0x1234);
     }

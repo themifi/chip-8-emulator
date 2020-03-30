@@ -640,7 +640,7 @@ impl VM {
 
     fn read_current_instruction(&self) -> u16 {
         self.memory
-            .read_instruction(self.registers.program_counter as usize)
+            .fetch_instruction(self.registers.program_counter as usize)
     }
 
     /// Advance program counter by `n` instructions.
