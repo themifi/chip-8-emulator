@@ -1,7 +1,9 @@
 use super::{
     graphics::Graphics,
     input::Input,
-    memory::{Memory, INSTRUCTION_SIZE, SPRITE_SIZE, SPRITE_START_LOCATION},
+    memory::{
+        Memory, INSTRUCTION_SIZE, PROGRAM_START_LOCATION, SPRITE_SIZE, SPRITE_START_LOCATION,
+    },
     registers::Registers,
     stack::Stack,
 };
@@ -632,6 +634,7 @@ impl VM {
     }
 
     pub fn run_program(&mut self) -> ! {
+        self.registers.program_counter = PROGRAM_START_LOCATION as u16;
         loop {
             let instruction = self.read_current_instruction();
             self.exec_instruction(instruction);
