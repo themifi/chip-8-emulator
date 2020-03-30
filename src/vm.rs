@@ -32,12 +32,11 @@ impl VM {
         self.registers.program_counter = self.stack.pop();
     }
 
-    /// Jump to a machine code routine at `addr`.
+    /// Jump to location `addr`.
     ///
-    /// Code: `0nnn`
+    /// Code: `1nnn`
     ///
-    /// This instruction is only used on the old computers on which Chip-8 was
-    /// originally implemented. It is ignored by modern interpreters.
+    /// The interpreter sets the program counter to `addr`.
     fn jp(&mut self, addr: u16) {
         assert!((addr & 0xF000) == 0);
         self.registers.program_counter = addr;
