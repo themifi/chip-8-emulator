@@ -60,8 +60,8 @@ impl Memory {
     }
 
     pub fn read_instruction(&self, program_counter: usize) -> u16 {
-        let addr = PROGRAM_START_LOCATION + program_counter*2;
-        let instr_slice = &self.memory[addr..addr+2];
+        let addr = PROGRAM_START_LOCATION + program_counter * 2;
+        let instr_slice = &self.memory[addr..addr + 2];
         let mut instr = [0, 0];
         instr[0..2].copy_from_slice(instr_slice);
         u16::from_be_bytes(instr)
