@@ -21,6 +21,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "chip-8-emulator-gui-app"
+version = "0.1.0"
+dependencies = [
+ "chip-8-emulator 0.1.0",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
