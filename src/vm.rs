@@ -229,7 +229,7 @@ impl VM {
         let (result, is_overflow) =
             self.registers.v[y as usize].overflowing_sub(self.registers.v[x as usize]);
         self.registers.v[x as usize] = result;
-        self.registers.v[0xF] = if is_overflow { 1 } else { 0 }; // FIXME
+        self.registers.v[0xF] = if is_overflow { 0 } else { 1 };
         self.registers.program_counter += 1;
     }
 
@@ -1133,7 +1133,7 @@ mod tests {
 
         assert_eq!(vm.registers.v[1], 156);
         assert_eq!(vm.registers.v[2], 100);
-        assert_eq!(vm.registers.v[0xF], 1);
+        assert_eq!(vm.registers.v[0xF], 0);
         assert_eq!(vm.registers.program_counter, 6);
     }
 
@@ -1149,7 +1149,7 @@ mod tests {
 
         assert_eq!(vm.registers.v[1], 50);
         assert_eq!(vm.registers.v[2], 150);
-        assert_eq!(vm.registers.v[0xF], 0);
+        assert_eq!(vm.registers.v[0xF], 1);
         assert_eq!(vm.registers.program_counter, 6);
     }
 
