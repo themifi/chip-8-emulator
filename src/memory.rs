@@ -38,12 +38,14 @@ impl Memory {
         Memory { memory }
     }
 
+    /// TODO: replace finish with len
     pub fn get_slice(&self, start: usize, finish: usize) -> &[u8] {
         assert!(start < MEMORY_SIZE);
         assert!(finish < MEMORY_SIZE);
         &self.memory[start..finish]
     }
 
+    /// TODO: replace finish with len
     pub fn get_slice_mut(&mut self, start: usize, finish: usize) -> &mut [u8] {
         assert!(start < MEMORY_SIZE);
         assert!(finish < MEMORY_SIZE);
@@ -55,6 +57,14 @@ impl Memory {
         let finish = start + program.len();
         let program_chunk = self.get_slice_mut(start, finish);
         program_chunk.copy_from_slice(program);
+    }
+
+    pub fn read_instruction(&self, program_counter: usize) -> u16 {
+        let addr = PROGRAM_START_LOCATION + program_counter*2;
+        let instr_slice = &self.memory[addr..addr+2];
+        let mut instr = [0, 0];
+        instr[0..2].copy_from_slice(instr_slice);
+        u16::from_be_bytes(instr)
     }
 }
 
@@ -83,5 +93,15 @@ mod tests {
             PROGRAM_START_LOCATION + test_program_code.len(),
         );
         assert_eq!(program_in_memory, test_program_code);
+    }
+
+    #[test]
+    fn test_read_instruction() {
+        let mut memory = Memory::new_with_initial_sprites();
+        memory.memory[0x202..0x204].copy_from_slice(&[0x12, 0x34]);
+
+        let instr = memory.read_instruction(0x1);
+
+        assert_eq!(instr, 0x1234);
     }
 }
