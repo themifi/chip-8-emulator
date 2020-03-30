@@ -1,7 +1,7 @@
 use super::{
     graphics::Graphics,
     input::Input,
-    memory::{Memory, SPRITE_SIZE, SPRITE_START_LOCATION},
+    memory::{Memory, INSTRUCTION_SIZE, SPRITE_SIZE, SPRITE_START_LOCATION},
     registers::Registers,
     stack::Stack,
 };
@@ -47,7 +47,7 @@ impl VM {
     /// Code: `00E0`
     fn cls(&mut self) {
         self.graphics.clear();
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Call subroutine at `addr`.
@@ -72,9 +72,9 @@ impl VM {
     /// equal, increments the program counter by 2.
     fn se(&mut self, x: u8, value: u8) {
         if self.registers.v[x as usize] == value {
-            self.registers.program_counter += 2;
+            self.next_instruction(2);
         } else {
-            self.registers.program_counter += 1;
+            self.next_instruction(1);
         }
     }
 
@@ -86,9 +86,9 @@ impl VM {
     /// equal, increments the program counter by 2.
     fn sne(&mut self, x: u8, value: u8) {
         if self.registers.v[x as usize] != value {
-            self.registers.program_counter += 2;
+            self.next_instruction(2);
         } else {
-            self.registers.program_counter += 1;
+            self.next_instruction(1);
         }
     }
 
@@ -100,9 +100,9 @@ impl VM {
     /// are equal, increments the program counter by 2.
     fn se_v(&mut self, x: u8, y: u8) {
         if self.registers.v[x as usize] == self.registers.v[y as usize] {
-            self.registers.program_counter += 2;
+            self.next_instruction(2);
         } else {
-            self.registers.program_counter += 1;
+            self.next_instruction(1);
         }
     }
 
@@ -113,7 +113,7 @@ impl VM {
     /// The interpreter puts the value `value` into register `Vx`.
     fn ld_vx(&mut self, x: u8, value: u8) {
         self.registers.v[x as usize] = value;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` + `value`.
@@ -125,7 +125,7 @@ impl VM {
     fn add_vx(&mut self, x: u8, value: u8) {
         let result = self.registers.v[x as usize].wrapping_add(value);
         self.registers.v[x as usize] = result;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vy`.
@@ -135,7 +135,7 @@ impl VM {
     /// Stores the value of register `Vy` in register `Vx`.
     fn ld_vx_vy(&mut self, x: u8, y: u8) {
         self.registers.v[x as usize] = self.registers.v[y as usize];
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` OR `Vy`.
@@ -148,7 +148,7 @@ impl VM {
     /// 1. Otherwise, it is 0.
     fn or(&mut self, vx: u8, vy: u8) {
         self.registers.v[vx as usize] |= self.registers.v[vy as usize];
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` AND `Vy`.
@@ -161,7 +161,7 @@ impl VM {
     /// 1. Otherwise, it is 0.
     fn and(&mut self, x: u8, y: u8) {
         self.registers.v[x as usize] &= self.registers.v[y as usize];
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` XOR `Vy`.
@@ -174,7 +174,7 @@ impl VM {
     /// corresponding bit in the result is set to 1. Otherwise, it is 0.
     fn xor(&mut self, vx: u8, vy: u8) {
         self.registers.v[vx as usize] ^= self.registers.v[vy as usize];
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` + `Vy`, set `VF` = carry.
@@ -189,7 +189,7 @@ impl VM {
             self.registers.v[x as usize].overflowing_add(self.registers.v[y as usize]);
         self.registers.v[x as usize] = result;
         self.registers.v[0xF] = if is_overflow { 1 } else { 0 };
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` - `Vy`, set `VF` = NOT borrow.
@@ -203,7 +203,7 @@ impl VM {
             self.registers.v[x as usize].overflowing_sub(self.registers.v[y as usize]);
         self.registers.v[x as usize] = result;
         self.registers.v[0xF] = if is_overflow { 0 } else { 1 };
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` SHR 1.
@@ -215,7 +215,7 @@ impl VM {
     fn shr(&mut self, x: u8) {
         self.registers.v[0xF] = self.registers.v[x as usize] % 2;
         self.registers.v[x as usize] >>= 1;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vy` - `Vx`, set `VF` = NOT borrow.
@@ -229,7 +229,7 @@ impl VM {
             self.registers.v[y as usize].overflowing_sub(self.registers.v[x as usize]);
         self.registers.v[x as usize] = result;
         self.registers.v[0xF] = if is_overflow { 0 } else { 1 };
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `Vx` = `Vx` SHL 1.
@@ -242,7 +242,7 @@ impl VM {
         let significant_bit = self.registers.v[x as usize] >= 0b1000_0000;
         self.registers.v[0xF] = if significant_bit { 1 } else { 0 };
         self.registers.v[x as usize] <<= 1;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Skip next instruction if `Vx` != `Vy`.
@@ -253,9 +253,9 @@ impl VM {
     /// the program counter is increased by 2.
     fn sne_vx_vy(&mut self, x: u8, y: u8) {
         if self.registers.v[x as usize] != self.registers.v[y as usize] {
-            self.registers.program_counter += 2;
+            self.next_instruction(2);
         } else {
-            self.registers.program_counter += 1;
+            self.next_instruction(1);
         }
     }
 
@@ -267,7 +267,7 @@ impl VM {
     fn ld_i(&mut self, value: u16) {
         assert!((value & 0xF000) == 0);
         self.registers.i = value;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Jump to location `addr` + `V0`.
@@ -290,7 +290,7 @@ impl VM {
     fn rnd(&mut self, x: u8, mask: u8) {
         let value = self.rng.gen::<u8>() & mask;
         self.registers.v[x as usize] = value;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Display `n`-byte sprite starting at memory location `I` at (`Vx`, `Vy`),
@@ -314,7 +314,7 @@ impl VM {
         let is_collision = self.graphics.draw_sprite(vx as usize, vy as usize, sprite);
 
         self.registers.v[0xF] = if is_collision { 1 } else { 0 };
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Skip next instruction if key with the value of `Vx` is pressed.
@@ -326,9 +326,9 @@ impl VM {
     fn skp(&mut self, x: u8) {
         let key = self.registers.v[x as usize];
         if self.input.get_pressed_key() == Some(key) {
-            self.registers.program_counter += 2;
+            self.next_instruction(2);
         } else {
-            self.registers.program_counter += 1;
+            self.next_instruction(1);
         }
     }
 
@@ -341,9 +341,9 @@ impl VM {
     fn sknp(&mut self, x: u8) {
         let key = self.registers.v[x as usize];
         if self.input.get_pressed_key() != Some(key) {
-            self.registers.program_counter += 2;
+            self.next_instruction(2);
         } else {
-            self.registers.program_counter += 1;
+            self.next_instruction(1);
         }
     }
 
@@ -354,7 +354,7 @@ impl VM {
     /// The value of delay timer is placed into `Vx`.
     fn ld_vx_dt(&mut self, x: u8) {
         self.registers.v[x as usize] = self.registers.delay_timer;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set delay timer = `Vx`.
@@ -364,7 +364,7 @@ impl VM {
     /// Delay timer is set equal to the value of `Vx`.
     fn ld_dt_vx(&mut self, x: u8) {
         self.registers.delay_timer = self.registers.v[x as usize];
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Wait for a key press, store the value of the key in `Vx`.
@@ -376,7 +376,7 @@ impl VM {
     fn ld_vx_k(&mut self, x: u8) {
         if let Some(key) = self.input.get_pressed_key() {
             self.registers.v[x as usize] = key;
-            self.registers.program_counter += 1;
+            self.next_instruction(1);
         }
     }
 
@@ -387,7 +387,7 @@ impl VM {
     /// Sound timer is set equal to the value of `Vx`.
     fn ld_st(&mut self, x: u8) {
         self.registers.sound_timer = self.registers.v[x as usize];
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `I` = `I` + `Vx`.
@@ -397,7 +397,7 @@ impl VM {
     /// The values of `I` and `Vx` are added, and the results are stored in `I`.
     fn add_i(&mut self, x: u8) {
         self.registers.i += self.registers.v[x as usize] as u16;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Set `I` = location of sprite for digit `Vx`.
@@ -411,7 +411,7 @@ impl VM {
         let sprite_num = self.registers.v[x as usize] as usize;
         let sprite_location = SPRITE_START_LOCATION + (sprite_num * SPRITE_SIZE);
         self.registers.i = sprite_location as u16;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Store BCD representation of `Vx` in memory locations `I`, `I+1`, and
@@ -433,7 +433,7 @@ impl VM {
         slice[0] = hundreds;
         slice[1] = tens;
         slice[2] = ones;
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Store registers `V0` through `Vx` in memory starting at location `I`.
@@ -450,7 +450,7 @@ impl VM {
 
         memory.copy_from_slice(registers);
 
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Read registers `V0` through `Vx` from memory starting at location `I`.
@@ -467,7 +467,7 @@ impl VM {
 
         registers.copy_from_slice(memory);
 
-        self.registers.program_counter += 1;
+        self.next_instruction(1);
     }
 
     /// Execute instruction `inst`
@@ -642,6 +642,11 @@ impl VM {
         self.memory
             .read_instruction(self.registers.program_counter as usize)
     }
+
+    /// Advance program counter by `n` instructions.
+    fn next_instruction(&mut self, n: usize) {
+        self.registers.program_counter += (n * INSTRUCTION_SIZE) as u16;
+    }
 }
 
 impl Default for VM {
@@ -699,37 +704,37 @@ mod tests {
         vm.cls();
 
         assert!(vm.graphics.display.iter().all(|&row| row == 0));
-        assert_eq!(vm.registers.program_counter, 1);
+        assert_eq!(vm.registers.program_counter, 2);
     }
 
     #[test]
     fn test_ret() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 1;
-        vm.stack.push(2);
-        vm.stack.push(3);
+        vm.stack.push(0x202);
+        vm.stack.push(0x204);
+        vm.registers.program_counter = 0x206;
 
         vm.ret();
 
-        assert_eq!(vm.registers.program_counter, 3);
+        assert_eq!(vm.registers.program_counter, 0x204);
         assert_eq!(vm.stack.pointer, 1);
-        assert_eq!(vm.stack.stack[0], 2);
+        assert_eq!(vm.stack.stack[0], 0x202);
     }
 
     #[test]
     fn test_call() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 1;
-        vm.stack.push(2);
-        vm.stack.push(3);
+        vm.stack.push(0x202);
+        vm.stack.push(0x204);
+        vm.registers.program_counter = 0x206;
 
-        vm.call(4);
+        vm.call(0x208);
 
-        assert_eq!(vm.registers.program_counter, 4);
+        assert_eq!(vm.registers.program_counter, 0x208);
         assert_eq!(vm.stack.pointer, 3);
-        assert_eq!(vm.stack.stack[0], 2);
-        assert_eq!(vm.stack.stack[1], 3);
-        assert_eq!(vm.stack.stack[2], 1);
+        assert_eq!(vm.stack.stack[0], 0x202);
+        assert_eq!(vm.stack.stack[1], 0x204);
+        assert_eq!(vm.stack.stack[2], 0x206);
     }
 
     #[test]
@@ -750,24 +755,24 @@ mod tests {
     fn test_se_equal() {
         let mut vm = VM::new();
         vm.registers.v[1] = 1;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.se(1, 1);
 
         assert_eq!(vm.registers.v[1], 1);
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
     fn test_se_not_equal() {
         let mut vm = VM::new();
         vm.registers.v[1] = 1;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.se(1, 2);
 
         assert_eq!(vm.registers.v[1], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -781,24 +786,24 @@ mod tests {
     fn test_sne_equal() {
         let mut vm = VM::new();
         vm.registers.v[1] = 1;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.sne(1, 1);
 
         assert_eq!(vm.registers.v[1], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_sne_not_equal() {
         let mut vm = VM::new();
         vm.registers.v[1] = 1;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.sne(1, 2);
 
         assert_eq!(vm.registers.v[1], 1);
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
@@ -813,13 +818,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 4;
         vm.registers.v[2] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.se_v(1, 2);
 
         assert_eq!(vm.registers.v[1], 4);
         assert_eq!(vm.registers.v[2], 4);
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
@@ -827,13 +832,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 4;
         vm.registers.v[2] = 5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.se_v(1, 2);
 
         assert_eq!(vm.registers.v[1], 4);
         assert_eq!(vm.registers.v[2], 5);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -854,12 +859,12 @@ mod tests {
     fn test_ld_vx() {
         let mut vm = VM::new();
         vm.registers.v[1] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.ld_vx(1, 2);
 
         assert_eq!(vm.registers.v[1], 2);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -873,24 +878,24 @@ mod tests {
     fn test_add_vx() {
         let mut vm = VM::new();
         vm.registers.v[1] = 200;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.add_vx(1, 50);
 
         assert_eq!(vm.registers.v[1], 250);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_add_vx_overflow() {
         let mut vm = VM::new();
         vm.registers.v[1] = 255;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.add_vx(1, 1);
 
         assert_eq!(vm.registers.v[1], 0);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -898,13 +903,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 4;
         vm.registers.v[2] = 7;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.ld_vx_vy(1, 2);
 
         assert_eq!(vm.registers.v[1], 7);
         assert_eq!(vm.registers.v[2], 7);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -926,13 +931,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 0xF0;
         vm.registers.v[2] = 0x0F;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.or(1, 2);
 
         assert_eq!(vm.registers.v[1], 0xFF);
         assert_eq!(vm.registers.v[2], 0x0F);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -954,13 +959,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 0b0101;
         vm.registers.v[2] = 0b1110;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.and(1, 2);
 
         assert_eq!(vm.registers.v[1], 0b0100);
         assert_eq!(vm.registers.v[2], 0b1110);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -982,13 +987,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 0b0100;
         vm.registers.v[2] = 0b1110;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.xor(1, 2);
 
         assert_eq!(vm.registers.v[1], 0b1010);
         assert_eq!(vm.registers.v[2], 0b1110);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1011,14 +1016,14 @@ mod tests {
         vm.registers.v[1] = 200;
         vm.registers.v[2] = 100;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.add_vx_vy(1, 2);
 
         assert_eq!(vm.registers.v[1], 44);
         assert_eq!(vm.registers.v[2], 100);
         assert_eq!(vm.registers.v[0xF], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1027,14 +1032,14 @@ mod tests {
         vm.registers.v[1] = 50;
         vm.registers.v[2] = 100;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.add_vx_vy(1, 2);
 
         assert_eq!(vm.registers.v[1], 150);
         assert_eq!(vm.registers.v[2], 100);
         assert_eq!(vm.registers.v[0xF], 0);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1057,14 +1062,14 @@ mod tests {
         vm.registers.v[1] = 100;
         vm.registers.v[2] = 200;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.sub(1, 2);
 
         assert_eq!(vm.registers.v[1], 156);
         assert_eq!(vm.registers.v[2], 200);
         assert_eq!(vm.registers.v[0xF], 0);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1073,14 +1078,14 @@ mod tests {
         vm.registers.v[1] = 150;
         vm.registers.v[2] = 100;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.sub(1, 2);
 
         assert_eq!(vm.registers.v[1], 50);
         assert_eq!(vm.registers.v[2], 100);
         assert_eq!(vm.registers.v[0xF], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1102,13 +1107,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 0b0101;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.shr(1);
 
         assert_eq!(vm.registers.v[1], 0b0010);
         assert_eq!(vm.registers.v[0xF], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1116,13 +1121,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 0b1010;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.shr(1);
 
         assert_eq!(vm.registers.v[1], 0b0101);
         assert_eq!(vm.registers.v[0xF], 0);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1138,14 +1143,14 @@ mod tests {
         vm.registers.v[1] = 200;
         vm.registers.v[2] = 100;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.subn(1, 2);
 
         assert_eq!(vm.registers.v[1], 156);
         assert_eq!(vm.registers.v[2], 100);
         assert_eq!(vm.registers.v[0xF], 0);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1154,14 +1159,14 @@ mod tests {
         vm.registers.v[1] = 100;
         vm.registers.v[2] = 150;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.subn(1, 2);
 
         assert_eq!(vm.registers.v[1], 50);
         assert_eq!(vm.registers.v[2], 150);
         assert_eq!(vm.registers.v[0xF], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1183,13 +1188,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 0b10101010;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.shl(1);
 
         assert_eq!(vm.registers.v[1], 0b01010100);
         assert_eq!(vm.registers.v[0xF], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1197,13 +1202,13 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[1] = 0b01101010;
         vm.registers.v[0xF] = 4;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.shl(1);
 
         assert_eq!(vm.registers.v[1], 0b11010100);
         assert_eq!(vm.registers.v[0xF], 0);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1216,37 +1221,37 @@ mod tests {
     #[test]
     fn test_sne_vx_vy_equal() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.v[0x1] = 5;
         vm.registers.v[0x2] = 5;
 
         vm.sne_vx_vy(0x1, 0x2);
 
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_sne_vx_vy_unequal() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.v[0x1] = 5;
         vm.registers.v[0x1] = 6;
 
         vm.sne_vx_vy(0x1, 0x2);
 
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
     fn test_ld_i() {
         let mut vm = VM::new();
         vm.registers.i = 5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.ld_i(0x0111);
 
         assert_eq!(vm.registers.i, 0x0111);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1278,18 +1283,18 @@ mod tests {
     fn test_rnd() {
         let mut vm = VM::new();
         vm.rng = SmallRng::seed_from_u64(0xFF);
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.v[1] = 0xAF;
 
         vm.rnd(1, 0xFF);
 
         assert_eq!(vm.registers.v[1], 181);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
 
         vm.rnd(1, 0x0F);
 
         assert_eq!(vm.registers.v[1], 5);
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
@@ -1302,7 +1307,7 @@ mod tests {
     #[test]
     fn test_drw() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         let location = 0x100;
         vm.registers.i = location as u16;
         vm.registers.v[0xF] = 2;
@@ -1316,13 +1321,13 @@ mod tests {
         let screen = [0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
         assert_eq!(&vm.graphics.display[0..10], &screen);
         assert_eq!(vm.registers.v[0xF], 0);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_drw_collision() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         let location = 0x100;
         vm.registers.i = location as u16;
         vm.registers.v[0xF] = 2;
@@ -1336,7 +1341,7 @@ mod tests {
 
         assert_eq!(vm.graphics.display[0], 0xFE);
         assert_eq!(vm.registers.v[0xF], 1);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1344,11 +1349,11 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new_with_key_pressed(0x5);
         vm.registers.v[0x2] = 0x5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.skp(0x2);
 
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
@@ -1356,11 +1361,11 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new_with_key_pressed(0x3);
         vm.registers.v[0x2] = 0x5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.skp(0x2);
 
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1368,11 +1373,11 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new_with_key_pressed(0x5);
         vm.registers.v[0x2] = 0x5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.sknp(0x2);
 
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1380,17 +1385,17 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new_with_key_pressed(0x4);
         vm.registers.v[0x2] = 0x5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.sknp(0x2);
 
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
     fn test_ld_vx_dt() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         let value = 0xFA;
         vm.registers.delay_timer = value;
 
@@ -1398,7 +1403,7 @@ mod tests {
 
         assert_eq!(vm.registers.v[0x2], value);
         assert_eq!(vm.registers.delay_timer, value);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1406,12 +1411,12 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new_with_key_pressed(0x5);
         vm.registers.v[0x2] = 0x1;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.ld_vx_k(0x2);
 
         assert_eq!(vm.registers.v[0x2], 0x5);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1419,18 +1424,18 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new();
         vm.registers.v[0x2] = 0x5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.ld_vx_k(0x2);
 
         assert_eq!(vm.registers.v[0x2], 0x5);
-        assert_eq!(vm.registers.program_counter, 5);
+        assert_eq!(vm.registers.program_counter, 0x200);
     }
 
     #[test]
     fn test_ld_dt_vx() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         let value = 0xFA;
         vm.registers.v[0x1] = value;
 
@@ -1438,39 +1443,39 @@ mod tests {
 
         assert_eq!(vm.registers.delay_timer, value);
         assert_eq!(vm.registers.v[0x1], value);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_ld_st() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         let sound_timer_value = 0xFA;
         vm.registers.v[0x2] = sound_timer_value;
 
         vm.ld_st(0x2);
 
         assert_eq!(vm.registers.v[0x2], sound_timer_value);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_add_i() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.i = 10;
         vm.registers.v[0x2] = 5;
 
         vm.add_i(0x2);
 
         assert_eq!(vm.registers.i, 15);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_ld_f() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.i = 10;
         vm.registers.v[0x2] = 5;
 
@@ -1483,13 +1488,13 @@ mod tests {
             vm.registers.i as usize + SPRITE_SIZE,
         );
         assert_eq!(sprite, &sprite_five);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_ld_b() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.v[0x5] = 123;
         vm.registers.i = 100;
 
@@ -1497,13 +1502,13 @@ mod tests {
 
         assert_eq!(vm.memory.get_slice(100, 103), &[1, 2, 3]);
         assert_eq!(vm.registers.i, 100);
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_ld_i_vx() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.i = 0x100;
         let registers = (0x0..=0xF).collect::<Vec<u8>>();
         vm.registers.v.copy_from_slice(&registers);
@@ -1511,13 +1516,13 @@ mod tests {
         vm.ld_i_vx(0xF);
 
         assert_eq!(vm.memory.get_slice(0x100, 0x110), registers.as_slice());
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
     fn test_ld_vx_i() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
         vm.registers.i = 0x100;
         let memory = (0x0..=0xF).collect::<Vec<u8>>();
         vm.memory
@@ -1527,7 +1532,7 @@ mod tests {
         vm.ld_vx_i(0xF);
 
         assert_eq!(vm.registers.v, memory.as_slice());
-        assert_eq!(vm.registers.program_counter, 6);
+        assert_eq!(vm.registers.program_counter, 0x202);
     }
 
     #[test]
@@ -1571,7 +1576,7 @@ mod tests {
     #[test]
     fn test_exec_instruction_call() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 0x1;
+        vm.registers.program_counter = 0x200;
         assert_eq!(vm.stack.pointer, 0);
 
         vm.exec_instruction(0x2ABC);
@@ -1583,35 +1588,35 @@ mod tests {
     #[test]
     fn test_exec_instruction_se() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 1;
+        vm.registers.program_counter = 0x202;
         vm.registers.v[0xA] = 0xBC;
 
         vm.exec_instruction(0x3ABC);
 
-        assert_eq!(vm.registers.program_counter, 3);
+        assert_eq!(vm.registers.program_counter, 0x206);
     }
 
     #[test]
     fn test_exec_instruction_sne() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 1;
+        vm.registers.program_counter = 0x202;
         vm.registers.v[0xA] = 0xBC;
 
         vm.exec_instruction(0x4ABB);
 
-        assert_eq!(vm.registers.program_counter, 3);
+        assert_eq!(vm.registers.program_counter, 0x206);
     }
 
     #[test]
     fn test_exec_instruction_se_v() {
         let mut vm = VM::new();
-        vm.registers.program_counter = 1;
+        vm.registers.program_counter = 0x202;
         vm.registers.v[0xA] = 0xBC;
         vm.registers.v[0xB] = 0xBC;
 
         vm.exec_instruction(0x5AB0);
 
-        assert_eq!(vm.registers.program_counter, 3);
+        assert_eq!(vm.registers.program_counter, 0x206);
     }
 
     #[test]
@@ -1743,11 +1748,11 @@ mod tests {
         let mut vm = VM::new();
         vm.registers.v[0xA] = 0x1;
         vm.registers.v[0xB] = 0x2;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.exec_instruction(0x9AB0);
 
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
@@ -1808,11 +1813,11 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new_with_key_pressed(0x5);
         vm.registers.v[0x2] = 0x5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.exec_instruction(0xE29E);
 
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
@@ -1820,11 +1825,11 @@ mod tests {
         let mut vm = VM::new();
         vm.input = Input::new();
         vm.registers.v[0x2] = 0x5;
-        vm.registers.program_counter = 5;
+        vm.registers.program_counter = 0x200;
 
         vm.exec_instruction(0xE2A1);
 
-        assert_eq!(vm.registers.program_counter, 7);
+        assert_eq!(vm.registers.program_counter, 0x204);
     }
 
     #[test]
