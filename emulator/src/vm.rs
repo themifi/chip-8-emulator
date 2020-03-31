@@ -638,6 +638,7 @@ impl VM {
     pub fn exec_current_instruction(&mut self) {
         let instruction = self.read_current_instruction();
         self.exec_instruction(instruction);
+        self.decrement_timers();
     }
 
     fn read_current_instruction(&self) -> u16 {
@@ -648,6 +649,15 @@ impl VM {
     /// Advance program counter by `n` instructions.
     fn next_instruction(&mut self, n: usize) {
         self.registers.program_counter += (n * INSTRUCTION_SIZE) as u16;
+    }
+
+    fn decrement_timers(&mut self) {
+        if self.registers.delay_timer > 0 {
+            self.registers.delay_timer -= 1;
+        }
+        if self.registers.sound_timer > 0 {
+            self.registers.sound_timer -= 1;
+        }
     }
 }
 
