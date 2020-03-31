@@ -309,12 +309,14 @@ impl VM {
     /// coordinates of the display, it wraps around to the opposite side of the
     /// screen. See instruction `8xy3` for more information on XOR, and section
     /// Display for more information on the Chip-8 screen and sprites.
-    fn drw(&mut self, vx: u8, vy: u8, n: u8) {
+    fn drw(&mut self, x: u8, y: u8, n: u8) {
         let sprite_start = self.registers.i as usize;
         let sprite_end = sprite_start + n as usize;
         let sprite = self.memory.get_slice(sprite_start, sprite_end);
 
-        let is_collision = self.graphics.draw_sprite(vx as usize, vy as usize, sprite);
+        let x_coord = self.registers.v[x as usize] as usize;
+        let y_coord = self.registers.v[y as usize] as usize;
+        let is_collision = self.graphics.draw_sprite(x_coord, y_coord, sprite);
 
         self.registers.v[0xF] = if is_collision { 1 } else { 0 };
         self.next_instruction(1);
@@ -1322,16 +1324,18 @@ mod tests {
         vm.registers.program_counter = 0x200;
         let location = 0x100;
         vm.registers.i = location as u16;
+        vm.registers.v[0x1] = 0x4;
+        vm.registers.v[0x2] = 0x5;
         vm.registers.v[0xF] = 2;
         let sprite = [0x20, 0x60, 0x20, 0x20, 0x70];
         vm.memory
             .get_slice_mut(location, location + sprite.len())
             .copy_from_slice(&sprite);
 
-        vm.drw(4, 4, 5);
+        vm.drw(0x1, 0x2, 5);
 
-        let screen = [0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
-        assert_eq!(&vm.graphics.display[0..10], &screen);
+        let screen = [0, 0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
+        assert_eq!(&vm.graphics.display[0..11], &screen);
         assert_eq!(vm.registers.v[0xF], 0);
         assert_eq!(vm.registers.program_counter, 0x202);
     }
@@ -1342,7 +1346,8 @@ mod tests {
         vm.registers.program_counter = 0x200;
         let location = 0x100;
         vm.registers.i = location as u16;
-        vm.registers.v[0xF] = 2;
+        vm.registers.v[0x0] = 0x0;
+        vm.registers.v[0xF] = 0x2;
         let sprite = [0xFF];
         vm.memory
             .get_slice_mut(location, location + sprite.len())
@@ -1808,16 +1813,18 @@ mod tests {
         let mut vm = VM::new();
         let location = 0x100;
         vm.registers.i = location as u16;
-        vm.registers.v[0xF] = 2;
+        vm.registers.v[0x1] = 0x4;
+        vm.registers.v[0x2] = 0x5;
+        vm.registers.v[0xF] = 0x2;
         let sprite = [0x20, 0x60, 0x20, 0x20, 0x70];
         vm.memory
             .get_slice_mut(location, location + sprite.len())
             .copy_from_slice(&sprite);
 
-        vm.exec_instruction(0xD445);
+        vm.exec_instruction(0xD125);
 
-        let screen = [0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
-        assert_eq!(&vm.graphics.display[0..10], &screen);
+        let screen = [0, 0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
+        assert_eq!(&vm.graphics.display[0..11], &screen);
     }
 
     #[test]
