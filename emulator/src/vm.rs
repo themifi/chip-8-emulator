@@ -631,16 +631,14 @@ impl VM {
 
     /// Load program `program`.
     pub fn load_program(&mut self, program: &[u8]) {
-        self.memory.load_program(program)
+        self.memory.load_program(program);
+        self.registers.program_counter = PROGRAM_START_LOCATION as u16;
     }
 
-    pub fn run_program(&mut self) -> ! {
-        self.registers.program_counter = PROGRAM_START_LOCATION as u16;
-        loop {
+    pub fn exec_current_instruction(&mut self) {
             let instruction = self.read_current_instruction();
             self.exec_instruction(instruction);
         }
-    }
 
     fn read_current_instruction(&self) -> u16 {
         self.memory
