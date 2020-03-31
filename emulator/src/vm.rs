@@ -32,6 +32,7 @@ impl VM {
     /// the stack, then subtracts 1 from the stack pointer.
     fn ret(&mut self) {
         self.registers.program_counter = self.stack.pop();
+        self.next_instruction(1);
     }
 
     /// Jump to location `addr`.
@@ -715,11 +716,11 @@ mod tests {
         let mut vm = VM::new();
         vm.stack.push(0x202);
         vm.stack.push(0x204);
-        vm.registers.program_counter = 0x206;
+        vm.registers.program_counter = 0x210;
 
         vm.ret();
 
-        assert_eq!(vm.registers.program_counter, 0x204);
+        assert_eq!(vm.registers.program_counter, 0x206);
         assert_eq!(vm.stack.pointer, 1);
         assert_eq!(vm.stack.stack[0], 0x202);
     }
