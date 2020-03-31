@@ -1,5 +1,5 @@
 pub const DISPLAY_ROWS: usize = 32;
-const DISPLAY_COLS: usize = 64;
+pub const DISPLAY_COLS: usize = 64;
 
 #[derive(Default)]
 pub struct Graphics {

@@ -14,7 +14,7 @@ pub struct VM {
     memory: Memory,
     registers: Registers,
     stack: Stack,
-    graphics: Graphics,
+    pub graphics: Graphics,
     input: Input,
     rng: SmallRng,
 }
@@ -636,9 +636,9 @@ impl VM {
     }
 
     pub fn exec_current_instruction(&mut self) {
-            let instruction = self.read_current_instruction();
-            self.exec_instruction(instruction);
-        }
+        let instruction = self.read_current_instruction();
+        self.exec_instruction(instruction);
+    }
 
     fn read_current_instruction(&self) -> u16 {
         self.memory
