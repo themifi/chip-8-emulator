@@ -1334,7 +1334,7 @@ mod tests {
 
         vm.drw(0x1, 0x2, 5);
 
-        let screen = [0, 0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
+        let screen = [0, 0, 0, 0, 0, 0x40, 0x60, 0x40, 0x40, 0xE0, 0];
         assert_eq!(&vm.graphics.display[0..11], &screen);
         assert_eq!(vm.registers.v[0xF], 0);
         assert_eq!(vm.registers.program_counter, 0x202);
@@ -1823,7 +1823,7 @@ mod tests {
 
         vm.exec_instruction(0xD125);
 
-        let screen = [0, 0, 0, 0, 0, 0x200, 0x600, 0x200, 0x200, 0x700, 0];
+        let screen = [0, 0, 0, 0, 0, 0x40, 0x60, 0x40, 0x40, 0xE0, 0];
         assert_eq!(&vm.graphics.display[0..11], &screen);
     }
 

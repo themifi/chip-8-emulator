@@ -22,7 +22,7 @@ impl Graphics {
         let mut is_collision = false;
 
         for (i, sprite_row) in sprite.iter().enumerate() {
-            let row = *sprite_row as u64;
+            let row = sprite_row.reverse_bits() as u64;
             let row = row.rotate_left(x as u32);
             let row_y = (y + i) % DISPLAY_ROWS;
             is_collision = is_collision || (self.display[row_y] & row) != 0;
@@ -44,7 +44,7 @@ mod tests {
         let is_collision = graphics.draw_sprite(8, 2, &sprite);
         assert_eq!(
             graphics.display[0..9],
-            [0, 0, 0x2000, 0x6000, 0x2000, 0x2000, 0x7000, 0, 0]
+            [0, 0, 0x400, 0x600, 0x400, 0x400, 0xE00, 0, 0]
         );
         assert!(!is_collision);
     }
@@ -96,7 +96,7 @@ mod tests {
     fn test_draw_sprite_collision() {
         let mut graphics = Graphics::new();
         graphics.display[0] = 0b11011100;
-        let sprite = [0b01000011];
+        let sprite = [0b01000011u8.reverse_bits()];
         let is_collision = graphics.draw_sprite(0, 0, &sprite);
         assert_eq!(graphics.display[0], 0b10011111);
         assert!(is_collision);
@@ -106,7 +106,7 @@ mod tests {
     fn test_draw_sprite_collision_one_bit() {
         let mut graphics = Graphics::new();
         graphics.display[0] = 0x1;
-        let sprite = [0x1];
+        let sprite = [0x1u8.reverse_bits()];
         let is_collision = graphics.draw_sprite(0, 0, &sprite);
         assert_eq!(graphics.display[0], 0x0);
         assert!(is_collision);
