@@ -1,10 +1,10 @@
-use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::pixels::Color;
 use std::time::Duration;
 
-use sdl2::{ Sdl, render::WindowCanvas, rect::Rect };
 use chip_8_emulator::VM;
+use sdl2::{rect::Rect, render::WindowCanvas, Sdl};
 use std::fs;
 
 const BLACK: Color = Color::RGB(0, 0, 0);
@@ -22,7 +22,8 @@ impl App {
     pub fn new() -> Self {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
-        let window = video_subsystem.window("rust-sdl2 demo", 800, 600)
+        let window = video_subsystem
+            .window("rust-sdl2 demo", 800, 600)
             .position_centered()
             .build()
             .unwrap();
@@ -50,10 +51,11 @@ impl App {
             self.canvas.clear();
             for event in event_pump.poll_iter() {
                 match event {
-                    Event::Quit {..} |
-                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                        break 'running
-                    },
+                    Event::Quit { .. }
+                    | Event::KeyDown {
+                        keycode: Some(Keycode::Escape),
+                        ..
+                    } => break 'running,
                     _ => {}
                 }
             }
@@ -64,7 +66,12 @@ impl App {
             for row in 0..chip_8_emulator::graphics::DISPLAY_ROWS {
                 for col in 0..chip_8_emulator::graphics::DISPLAY_COLS {
                     if (self.vm.graphics.display[row] & (1 << col)) != 0 {
-                        let pixel = Rect::new((col*PIXEL_SIZE) as i32, (row*PIXEL_SIZE) as i32, PIXEL_SIZE as u32, PIXEL_SIZE as u32);
+                        let pixel = Rect::new(
+                            (col * PIXEL_SIZE) as i32,
+                            (row * PIXEL_SIZE) as i32,
+                            PIXEL_SIZE as u32,
+                            PIXEL_SIZE as u32,
+                        );
                         self.canvas.fill_rect(pixel).unwrap();
                     }
                 }
@@ -72,6 +79,6 @@ impl App {
 
             self.canvas.present();
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-        };
+        }
     }
 }
