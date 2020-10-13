@@ -25,5 +25,6 @@ pub mod registers;
 pub mod stack;
 pub mod vm;
 pub mod interpreter;
+pub mod execute_instruction;
 
 pub use vm::VM;
