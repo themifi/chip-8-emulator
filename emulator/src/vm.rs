@@ -6,6 +6,7 @@ use super::{
     },
     registers::Registers,
     stack::Stack,
+    interpreter::Interpreter,
 };
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
@@ -24,6 +25,208 @@ impl VM {
         Default::default()
     }
 
+    /// Execute instruction `inst`
+    ///
+    /// `inst` integer should be in navite endian order.
+    #[allow(clippy::cognitive_complexity)]
+    pub fn exec_instruction(&mut self, inst: u16) {
+        match inst {
+            0x00E0 => self.cls(),
+            0x00EE => self.ret(),
+            inst if inst & 0xF000 == 0x1000 => {
+                let addr = inst & 0x0FFF;
+                self.jp(addr);
+            }
+            inst if inst & 0xF000 == 0x2000 => {
+                let addr = inst & 0x0FFF;
+                self.call(addr);
+            }
+            inst if inst & 0xF000 == 0x3000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let value = (inst & 0x00FF) as u8;
+                self.se(x, value);
+            }
+            inst if inst & 0xF000 == 0x4000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let value = (inst & 0x00FF) as u8;
+                self.sne(x, value);
+            }
+            inst if inst & 0xF00F == 0x5000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.se_v(x, y);
+            }
+            inst if inst & 0xF000 == 0x6000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let value = (inst & 0x00FF) as u8;
+                self.ld_vx(x, value);
+            }
+            inst if inst & 0xF000 == 0x7000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let value = (inst & 0x00FF) as u8;
+                self.add_vx(x, value);
+            }
+            inst if inst & 0xF00F == 0x8000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.ld_vx_vy(x, y);
+            }
+            inst if inst & 0xF00F == 0x8001 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.or(x, y);
+            }
+            inst if inst & 0xF00F == 0x8002 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.and(x, y);
+            }
+            inst if inst & 0xF00F == 0x8003 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.xor(x, y);
+            }
+            inst if inst & 0xF00F == 0x8004 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.add_vx_vy(x, y);
+            }
+            inst if inst & 0xF00F == 0x8005 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.sub(x, y);
+            }
+            inst if inst & 0xF00F == 0x8006 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.shr(x);
+            }
+            inst if inst & 0xF00F == 0x8007 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.subn(x, y);
+            }
+            inst if inst & 0xF00F == 0x800E => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.shl(x);
+            }
+            inst if inst & 0xF00F == 0x9000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                self.sne_vx_vy(x, y);
+            }
+            inst if inst & 0xF000 == 0xA000 => {
+                let value = inst & 0x0FFF;
+                self.ld_i(value);
+            }
+            inst if inst & 0xF000 == 0xB000 => {
+                let addr = inst & 0x0FFF;
+                self.jp_v0(addr);
+            }
+            inst if inst & 0xF000 == 0xC000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let mask = (inst & 0x00FF) as u8;
+                self.rnd(x, mask);
+            }
+            inst if inst & 0xF000 == 0xD000 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                let y = ((inst & 0x00F0) >> 4) as u8;
+                let n = (inst & 0x000F) as u8;
+                self.drw(x, y, n);
+            }
+            inst if inst & 0xF0FF == 0xE09E => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.skp(x);
+            }
+            inst if inst & 0xF0FF == 0xE0A1 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.sknp(x);
+            }
+            inst if inst & 0xF0FF == 0xF007 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_vx_dt(x);
+            }
+            inst if inst & 0xF0FF == 0xF00A => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_vx_k(x);
+            }
+            inst if inst & 0xF0FF == 0xF015 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_dt_vx(x);
+            }
+            inst if inst & 0xF0FF == 0xF018 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_st(x);
+            }
+            inst if inst & 0xF0FF == 0xF01E => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.add_i(x);
+            }
+            inst if inst & 0xF0FF == 0xF029 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_f(x);
+            }
+            inst if inst & 0xF0FF == 0xF033 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_b(x);
+            }
+            inst if inst & 0xF0FF == 0xF055 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_i_vx(x);
+            }
+            inst if inst & 0xF0FF == 0xF065 => {
+                let x = ((inst & 0x0F00) >> 8) as u8;
+                self.ld_vx_i(x);
+            }
+            _ => panic!("unexpected instruction: {:#06X}", inst),
+        }
+    }
+
+    /// Load program `program`.
+    pub fn load_program(&mut self, program: &[u8]) {
+        self.memory.load_program(program);
+        self.registers.program_counter = PROGRAM_START_LOCATION as u16;
+    }
+
+    pub fn exec_current_instruction(&mut self) {
+        let instruction = self.read_current_instruction();
+        self.exec_instruction(instruction);
+        self.decrement_timers();
+    }
+
+    fn read_current_instruction(&self) -> u16 {
+        self.memory
+            .fetch_instruction(self.registers.program_counter as usize)
+    }
+
+    /// Advance program counter by `n` instructions.
+    fn next_instruction(&mut self, n: usize) {
+        self.registers.program_counter += (n * INSTRUCTION_SIZE) as u16;
+    }
+
+    fn decrement_timers(&mut self) {
+        if self.registers.delay_timer > 0 {
+            self.registers.delay_timer -= 1;
+        }
+        if self.registers.sound_timer > 0 {
+            self.registers.sound_timer -= 1;
+        }
+    }
+}
+
+impl Default for VM {
+    fn default() -> Self {
+        Self {
+            memory: Memory::new_with_initial_sprites(),
+            registers: Registers::new(),
+            stack: Stack::new(),
+            graphics: Graphics::new(),
+            input: Input::new(),
+            rng: SmallRng::seed_from_u64(0),
+        }
+    }
+}
+
+impl Interpreter for VM {
     /// Return from a subroutine.
     ///
     /// Code: `00EE`
@@ -473,206 +676,6 @@ impl VM {
         registers.copy_from_slice(memory);
 
         self.next_instruction(1);
-    }
-
-    /// Execute instruction `inst`
-    ///
-    /// `inst` integer should be in navite endian order.
-    #[allow(clippy::cognitive_complexity)]
-    pub fn exec_instruction(&mut self, inst: u16) {
-        match inst {
-            0x00E0 => self.cls(),
-            0x00EE => self.ret(),
-            inst if inst & 0xF000 == 0x1000 => {
-                let addr = inst & 0x0FFF;
-                self.jp(addr);
-            }
-            inst if inst & 0xF000 == 0x2000 => {
-                let addr = inst & 0x0FFF;
-                self.call(addr);
-            }
-            inst if inst & 0xF000 == 0x3000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let value = (inst & 0x00FF) as u8;
-                self.se(x, value);
-            }
-            inst if inst & 0xF000 == 0x4000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let value = (inst & 0x00FF) as u8;
-                self.sne(x, value);
-            }
-            inst if inst & 0xF00F == 0x5000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.se_v(x, y);
-            }
-            inst if inst & 0xF000 == 0x6000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let value = (inst & 0x00FF) as u8;
-                self.ld_vx(x, value);
-            }
-            inst if inst & 0xF000 == 0x7000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let value = (inst & 0x00FF) as u8;
-                self.add_vx(x, value);
-            }
-            inst if inst & 0xF00F == 0x8000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.ld_vx_vy(x, y);
-            }
-            inst if inst & 0xF00F == 0x8001 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.or(x, y);
-            }
-            inst if inst & 0xF00F == 0x8002 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.and(x, y);
-            }
-            inst if inst & 0xF00F == 0x8003 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.xor(x, y);
-            }
-            inst if inst & 0xF00F == 0x8004 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.add_vx_vy(x, y);
-            }
-            inst if inst & 0xF00F == 0x8005 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.sub(x, y);
-            }
-            inst if inst & 0xF00F == 0x8006 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.shr(x);
-            }
-            inst if inst & 0xF00F == 0x8007 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.subn(x, y);
-            }
-            inst if inst & 0xF00F == 0x800E => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.shl(x);
-            }
-            inst if inst & 0xF00F == 0x9000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                self.sne_vx_vy(x, y);
-            }
-            inst if inst & 0xF000 == 0xA000 => {
-                let value = inst & 0x0FFF;
-                self.ld_i(value);
-            }
-            inst if inst & 0xF000 == 0xB000 => {
-                let addr = inst & 0x0FFF;
-                self.jp_v0(addr);
-            }
-            inst if inst & 0xF000 == 0xC000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let mask = (inst & 0x00FF) as u8;
-                self.rnd(x, mask);
-            }
-            inst if inst & 0xF000 == 0xD000 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                let y = ((inst & 0x00F0) >> 4) as u8;
-                let n = (inst & 0x000F) as u8;
-                self.drw(x, y, n);
-            }
-            inst if inst & 0xF0FF == 0xE09E => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.skp(x);
-            }
-            inst if inst & 0xF0FF == 0xE0A1 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.sknp(x);
-            }
-            inst if inst & 0xF0FF == 0xF007 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_vx_dt(x);
-            }
-            inst if inst & 0xF0FF == 0xF00A => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_vx_k(x);
-            }
-            inst if inst & 0xF0FF == 0xF015 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_dt_vx(x);
-            }
-            inst if inst & 0xF0FF == 0xF018 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_st(x);
-            }
-            inst if inst & 0xF0FF == 0xF01E => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.add_i(x);
-            }
-            inst if inst & 0xF0FF == 0xF029 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_f(x);
-            }
-            inst if inst & 0xF0FF == 0xF033 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_b(x);
-            }
-            inst if inst & 0xF0FF == 0xF055 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_i_vx(x);
-            }
-            inst if inst & 0xF0FF == 0xF065 => {
-                let x = ((inst & 0x0F00) >> 8) as u8;
-                self.ld_vx_i(x);
-            }
-            _ => panic!("unexpected instruction: {:#06X}", inst),
-        }
-    }
-
-    /// Load program `program`.
-    pub fn load_program(&mut self, program: &[u8]) {
-        self.memory.load_program(program);
-        self.registers.program_counter = PROGRAM_START_LOCATION as u16;
-    }
-
-    pub fn exec_current_instruction(&mut self) {
-        let instruction = self.read_current_instruction();
-        self.exec_instruction(instruction);
-        self.decrement_timers();
-    }
-
-    fn read_current_instruction(&self) -> u16 {
-        self.memory
-            .fetch_instruction(self.registers.program_counter as usize)
-    }
-
-    /// Advance program counter by `n` instructions.
-    fn next_instruction(&mut self, n: usize) {
-        self.registers.program_counter += (n * INSTRUCTION_SIZE) as u16;
-    }
-
-    fn decrement_timers(&mut self) {
-        if self.registers.delay_timer > 0 {
-            self.registers.delay_timer -= 1;
-        }
-        if self.registers.sound_timer > 0 {
-            self.registers.sound_timer -= 1;
-        }
-    }
-}
-
-impl Default for VM {
-    fn default() -> Self {
-        Self {
-            memory: Memory::new_with_initial_sprites(),
-            registers: Registers::new(),
-            stack: Stack::new(),
-            graphics: Graphics::new(),
-            input: Input::new(),
-            rng: SmallRng::seed_from_u64(0),
-        }
     }
 }
 
