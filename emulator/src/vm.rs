@@ -1,13 +1,13 @@
 use super::{
+    execute_instruction::execute_instruction,
     graphics::Graphics,
     input::Input,
+    interpreter::Interpreter,
     memory::{
         Memory, INSTRUCTION_SIZE, PROGRAM_START_LOCATION, SPRITE_SIZE, SPRITE_START_LOCATION,
     },
     registers::Registers,
     stack::Stack,
-    interpreter::Interpreter,
-    execute_instruction::execute_instruction,
 };
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
