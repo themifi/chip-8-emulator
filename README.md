@@ -1,6 +1,6 @@
 # CHIP-8 emulator
-[![CI](https://github.com/opilar/chip-8-emulator/workflows/CI/badge.svg)](https://github.com/opilar/chip-8-emulator/actions)
-[![codecov](https://codecov.io/gh/opilar/chip-8-emulator/branch/master/graph/badge.svg)](https://codecov.io/gh/opilar/chip-8-emulator)
+[![CI](https://github.com/themifi/chip-8-emulator/workflows/CI/badge.svg)](https://github.com/themifi/chip-8-emulator/actions)
+[![codecov](https://codecov.io/gh/themifi/chip-8-emulator/branch/master/graph/badge.svg)](https://codecov.io/gh/themifi/chip-8-emulator)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 My CHIP-8 emulator written in [Rust](https://github.com/rust-lang/rust).
