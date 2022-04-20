@@ -19,6 +19,7 @@ pub struct VM {
     rng: SmallRng,
 }
 
+#[allow(clippy::only_used_in_recursion)]
 impl VM {
     pub fn new() -> VM {
         Default::default()
