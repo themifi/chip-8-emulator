@@ -13,13 +13,13 @@ impl Stack {
 
     pub fn push(&mut self, value: u16) {
         assert!((self.pointer as usize) < STACK_SIZE - 1);
-        self.stack[(self.pointer as usize)] = value;
+        self.stack[self.pointer as usize] = value;
         self.pointer += 1;
     }
 
     pub fn pop(&mut self) -> u16 {
         assert!(self.pointer > 0);
         self.pointer -= 1;
-        self.stack[(self.pointer as usize)]
+        self.stack[self.pointer as usize]
     }
 }
