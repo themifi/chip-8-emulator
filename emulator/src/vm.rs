@@ -292,7 +292,7 @@ impl VM {
     /// ANDed with the value `mask`. The results are stored in `Vx`. See
     /// instruction `8xy2` for more information on AND.
     fn rnd(&mut self, x: u8, mask: u8) {
-        let value = self.rng.gen::<u8>() & mask;
+        let value = self.rng.random::<u8>() & mask;
         self.registers.v[x as usize] = value;
         self.next_instruction(1);
     }
@@ -1303,12 +1303,12 @@ mod tests {
 
         vm.rnd(1, 0xFF);
 
-        assert_eq!(vm.registers.v[1], 181);
+        assert_eq!(vm.registers.v[1], 1);
         assert_eq!(vm.registers.program_counter, 0x202);
 
         vm.rnd(1, 0x0F);
 
-        assert_eq!(vm.registers.v[1], 5);
+        assert_eq!(vm.registers.v[1], 4);
         assert_eq!(vm.registers.program_counter, 0x204);
     }
 
@@ -1802,11 +1802,11 @@ mod tests {
 
         vm.exec_instruction(0xC1FF);
 
-        assert_eq!(vm.registers.v[1], 181);
+        assert_eq!(vm.registers.v[1], 1);
 
         vm.exec_instruction(0xC10F);
 
-        assert_eq!(vm.registers.v[1], 5);
+        assert_eq!(vm.registers.v[1], 4);
     }
 
     #[test]

@@ -2,7 +2,7 @@
 name = "chip-8-emulator"
 version = "0.1.0"
 authors = ["Mikhail Rybakov <me@opilar.com>"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-rand = { version = "0.7", features = ["small_rng"] }
+rand = { version = "0.9", features = ["small_rng"] }

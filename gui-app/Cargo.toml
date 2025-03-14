@@ -2,7 +2,7 @@
 name = "chip-8-emulator-gui-app"
 version = "0.1.0"
 authors = ["Mikhail Rybakov <me@opilar.com>"]
-edition = "2021"
+edition = "2024"
 build = "build.rs"
 
 [dependencies]
