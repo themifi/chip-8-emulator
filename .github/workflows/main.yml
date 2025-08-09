@@ -52,10 +52,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
       - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          args: '-- --test-threads 1'
+        run: cargo tarpaulin --out Xml -- --test-threads 1
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:
