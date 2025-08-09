@@ -2,9 +2,9 @@
 name = "chip-8-emulator-gui-app"
 version = "0.1.0"
 authors = ["Michael Fisher <mifi@hey.com>"]
-edition = "2024"
+edition = "2021"
 build = "build.rs"
 
 [dependencies]
 "chip-8-emulator" = { path = "../emulator" }
-sdl2 = "0.33"
+sdl2 = "0.36.0"
